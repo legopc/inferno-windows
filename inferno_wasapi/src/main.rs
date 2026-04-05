@@ -2,12 +2,21 @@
 //!
 //! Receives audio from a Dante network and plays it through Windows audio
 //! devices using WASAPI (Windows Audio Session API).
+//!
+//! Architecture:
+//! - inferno_aoip drives timing via a 50ms callback (receive_with_callback)
+//! - A shared audio queue (VecDeque) bridges the async callback to a dedicated
+//!   WASAPI render thread
+//! - The WASAPI thread runs event-driven (WaitForSingleObject) on its own OS
+//!   thread so it never blocks the tokio executor
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use log::{info, warn};
+use log::{info, warn, error};
 
 use inferno_aoip::device_server::{DeviceServer, Settings};
 
@@ -54,6 +63,115 @@ fn list_wasapi_devices() -> Result<()> {
     Ok(())
 }
 
+/// Open the requested (or default) WASAPI render device by name substring.
+fn open_wasapi_device(device_filter: &Option<String>) -> Result<wasapi::Device> {
+    use wasapi::*;
+    initialize_mta().ok();
+    if let Some(name_filter) = device_filter {
+        let collection = DeviceCollection::new(&Direction::Render)
+            .map_err(|e| anyhow!("Failed to enumerate WASAPI render devices: {e}"))?;
+        for dev in &collection {
+            if let Ok(d) = dev {
+                if let Ok(name) = d.get_friendlyname() {
+                    if name.contains(name_filter.as_str()) {
+                        return Ok(d);
+                    }
+                }
+            }
+        }
+        Err(anyhow!("No WASAPI device found matching '{name_filter}'"))
+    } else {
+        get_default_device(&Direction::Render)
+            .map_err(|e| anyhow!("Failed to get default WASAPI device: {e}"))
+    }
+}
+
+/// Dedicated WASAPI render thread.
+///
+/// Reads interleaved i32 samples from `audio_queue` and writes them to
+/// the WASAPI render client.  Runs event-driven: blocks on the WASAPI
+/// buffer-ready event (WaitForSingleObject under the hood) so it wakes up
+/// exactly when the driver needs more data.
+fn wasapi_render_thread(
+    device_filter: Option<String>,
+    sample_rate: u32,
+    channels: usize,
+    audio_queue: Arc<Mutex<VecDeque<i32>>>,
+    shutdown: Arc<AtomicBool>,
+    ready_tx: std::sync::mpsc::SyncSender<Result<String, String>>,
+) {
+    use wasapi::*;
+    initialize_mta().ok();
+
+    let device = match open_wasapi_device(&device_filter) {
+        Ok(d) => d,
+        Err(e) => { ready_tx.send(Err(e.to_string())).ok(); return; }
+    };
+    let device_name = device.get_friendlyname().unwrap_or_else(|_| "Unknown".into());
+
+    let mut audio_client = match device.get_iaudioclient() {
+        Ok(c) => c,
+        Err(e) => { ready_tx.send(Err(format!("get_iaudioclient: {e}"))).ok(); return; }
+    };
+
+    let format = WaveFormat::new(32, 32, &SampleType::Int, sample_rate as usize, channels, None);
+    let blockalign = format.get_blockalign() as usize;
+
+    let (def_period, _min_period) = match audio_client.get_periods() {
+        Ok(p) => p,
+        Err(e) => { ready_tx.send(Err(format!("get_periods: {e}"))).ok(); return; }
+    };
+
+    if let Err(e) = audio_client.initialize_client(&format, def_period, &Direction::Render, &ShareMode::Shared, true) {
+        ready_tx.send(Err(format!("initialize_client: {e}"))).ok(); return;
+    }
+
+    let render_client = match audio_client.get_audiorenderclient() {
+        Ok(r) => r,
+        Err(e) => { ready_tx.send(Err(format!("get_audiorenderclient: {e}"))).ok(); return; }
+    };
+    let h_event = match audio_client.set_get_eventhandle() {
+        Ok(e) => e,
+        Err(e) => { ready_tx.send(Err(format!("set_get_eventhandle: {e}"))).ok(); return; }
+    };
+    if let Err(e) = audio_client.start_stream() {
+        ready_tx.send(Err(format!("start_stream: {e}"))).ok(); return;
+    }
+
+    info!("WASAPI render thread started: {device_name} (blockalign={blockalign})");
+    ready_tx.send(Ok(device_name)).ok();
+
+    while !shutdown.load(Ordering::Relaxed) {
+        match h_event.wait_for_event(200) {
+            Err(_) => continue, // timeout, loop and check shutdown
+            Ok(()) => {}
+        }
+
+        let frames = match audio_client.get_available_space_in_frames() {
+            Ok(n) if n > 0 => n as usize,
+            Ok(_) => continue,
+            Err(e) => { warn!("get_available_space_in_frames: {e}"); continue; }
+        };
+
+        let needed = frames * channels;
+        let mut pcm = vec![0i32; needed];
+        {
+            let mut q = audio_queue.lock().unwrap();
+            for s in pcm.iter_mut() {
+                *s = q.pop_front().unwrap_or(0);
+            }
+        }
+
+        let bytes: Vec<u8> = pcm.iter().flat_map(|s| s.to_le_bytes()).collect();
+        if let Err(e) = render_client.write_to_device(frames, &bytes, None) {
+            warn!("write_to_device: {e}");
+        }
+    }
+
+    audio_client.stop_stream().ok();
+    info!("WASAPI render thread stopped");
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let logenv = env_logger::Env::default().default_filter_or("info");
@@ -67,7 +185,6 @@ async fn main() -> Result<()> {
 
     info!("Starting inferno_wasapi");
 
-    // Build Dante device settings
     let device_name = args.name.unwrap_or_else(|| {
         hostname::get()
             .map(|h| h.to_string_lossy().into_owned())
@@ -86,144 +203,67 @@ async fn main() -> Result<()> {
     info!("Channels: {}", args.channels);
     info!("Sample rate: {} Hz", args.sample_rate);
 
+    // Shared audio queue: Dante callback -> WASAPI render thread
+    // Capped at 2 seconds to prevent unbounded growth if WASAPI stalls
+    let audio_queue: Arc<Mutex<VecDeque<i32>>> =
+        Arc::new(Mutex::new(VecDeque::with_capacity(args.sample_rate as usize * args.channels * 2)));
+    let audio_queue_wasapi = audio_queue.clone();
+    let audio_queue_dante = audio_queue.clone();
+
+    // Shutdown flag shared between main and the WASAPI thread
+    let shutdown = Arc::new(AtomicBool::new(false));
+    let shutdown_wasapi = shutdown.clone();
+
+    // Start WASAPI render thread before Dante so audio is ready when data arrives
+    let (ready_tx, ready_rx) = std::sync::mpsc::sync_channel(1);
+    let channels = args.channels;
+    let sample_rate = args.sample_rate;
+    let device_filter = args.device.clone();
+    let wasapi_thread = std::thread::Builder::new()
+        .name("wasapi-render".into())
+        .spawn(move || {
+            wasapi_render_thread(device_filter, sample_rate, channels, audio_queue_wasapi, shutdown_wasapi, ready_tx);
+        })?;
+
+    // Wait for WASAPI thread to confirm it started
+    match ready_rx.recv() {
+        Ok(Ok(dev_name)) => info!("WASAPI ready: {dev_name}"),
+        Ok(Err(e)) => return Err(anyhow!("WASAPI init failed: {e}")),
+        Err(_) => return Err(anyhow!("WASAPI thread died before signalling ready")),
+    }
+
     // Start the Dante device server
     let mut server = DeviceServer::start(settings).await;
-    info!("Dante device server started -- device should appear in Dante Controller");
+    info!("Dante device server started — device should appear in Dante Controller");
 
-    // Open WASAPI output device
-    use wasapi::*;
-    initialize_mta().ok();
+    let channels_cb = args.channels;
+    let max_queue = args.sample_rate as usize * args.channels * 2; // 2-second cap
 
-    let device = if let Some(ref dev_name) = args.device {
-        let collection = DeviceCollection::new(&Direction::Render)
-            .map_err(|e| anyhow!("Failed to enumerate WASAPI render devices: {e}"))?;
-        let mut found = None;
-        for device_result in &collection {
-            if let Ok(d) = device_result {
-                if let Ok(name) = d.get_friendlyname() {
-                    if name.contains(dev_name.as_str()) {
-                        found = Some(d);
-                        break;
-                    }
-                }
+    // receive_with_callback: inferno_aoip calls this ~every 50ms with decoded samples.
+    // No timestamp management needed — inferno_aoip handles ring-buffer alignment.
+    server.receive_with_callback(Box::new(move |num_samples, channel_data| {
+        let mut q = audio_queue_dante.lock().unwrap();
+        if q.len() >= max_queue {
+            warn!("Audio queue full ({} samples), dropping {} samples", q.len(), num_samples * channels_cb);
+            return;
+        }
+        for frame in 0..num_samples {
+            for ch in 0..channels_cb {
+                let sample = channel_data.get(ch).and_then(|c| c.get(frame)).copied().unwrap_or(0);
+                q.push_back(sample);
             }
         }
-        found.ok_or_else(|| anyhow!("No WASAPI device found matching '{dev_name}'"))?
-    } else {
-        get_default_device(&Direction::Render)
-            .map_err(|e| anyhow!("Failed to get default WASAPI device: {e}"))?
-    };
-
-    let device_name_str = device.get_friendlyname().unwrap_or_else(|_| "Unknown".into());
-    info!("Using WASAPI device: {device_name_str}");
-
-    let mut audio_client = device.get_iaudioclient()
-        .map_err(|e| anyhow!("Failed to get IAudioClient: {e}"))?;
-
-    let desired_format = WaveFormat::new(
-        32,               // bits per sample
-        32,               // valid bits per sample
-        &SampleType::Int,
-        args.sample_rate as usize,
-        args.channels,
-        None,
-    );
-
-    let (def_time, _min_time) = audio_client.get_periods()
-        .map_err(|e| anyhow!("Failed to get device periods: {e}"))?;
-
-    audio_client
-        .initialize_client(
-            &desired_format,
-            def_time,
-            &Direction::Render,
-            &ShareMode::Shared,
-            true,
-        )
-        .map_err(|e| anyhow!("Failed to initialize WASAPI audio client: {e}"))?;
-
-    let blockalign = desired_format.get_blockalign() as usize;
-    let render_client = audio_client.get_audiorenderclient()
-        .map_err(|e| anyhow!("Failed to get AudioRenderClient: {e}"))?;
-    let h_event = audio_client.set_get_eventhandle()
-        .map_err(|e| anyhow!("Failed to create WASAPI event handle: {e}"))?;
-    audio_client.start_stream()
-        .map_err(|e| anyhow!("Failed to start WASAPI stream: {e}"))?;
-    info!("WASAPI stream started (blockalign={blockalign} bytes/frame)");
-
-    // Subscribe to Dante audio receiver
-    let mut rt_receiver = server.receive_realtime().await;
-
-    // Track our position in sample-time
-    let mut current_timestamp: inferno_aoip::device_server::Clock = 0;
-    let mut clock_synced = false;
-
-    // Signal handler for graceful shutdown
-    let ctrl_c = tokio::signal::ctrl_c();
-    tokio::pin!(ctrl_c);
+    })).await;
 
     info!("Streaming Dante -> WASAPI. Press Ctrl+C to stop.");
 
-    loop {
-        tokio::select! {
-            _ = &mut ctrl_c => {
-                info!("Ctrl+C received, shutting down");
-                break;
-            }
-            _ = tokio::time::sleep(std::time::Duration::from_millis(1)) => {
-                // Sync timestamp from media clock when available
-                if !clock_synced {
-                    let media_clock = rt_receiver.clock();
-                    if let Some(ts) = media_clock.wrapping_now_in_timebase(args.sample_rate as u64) {
-                        current_timestamp = ts;
-                        clock_synced = true;
-                        info!("Media clock synchronized, starting at timestamp {ts}");
-                    }
-                }
+    tokio::signal::ctrl_c().await?;
+    info!("Ctrl+C received, shutting down");
 
-                // Ask WASAPI how many frames we can write
-                let frames_available = match audio_client.get_available_space_in_frames() {
-                    Ok(n) if n > 0 => n as usize,
-                    Ok(_) => continue,
-                    Err(e) => {
-                        warn!("get_available_space_in_frames error: {e}");
-                        continue;
-                    }
-                };
-
-                // Build interleaved i32 audio buffer
-                let mut pcm = vec![0i32; frames_available * args.channels];
-
-                if clock_synced {
-                    for ch in 0..args.channels {
-                        let mut ch_buf = vec![0i32; frames_available];
-                        rt_receiver.get_samples(current_timestamp, ch, &mut ch_buf);
-                        for (frame, sample) in ch_buf.into_iter().enumerate() {
-                            pcm[frame * args.channels + ch] = sample;
-                        }
-                    }
-                }
-
-                // Convert i32 samples to bytes and write to WASAPI
-                let bytes: Vec<u8> = pcm.iter().flat_map(|s| s.to_le_bytes()).collect();
-                if let Err(e) = render_client.write_to_device(frames_available, &bytes, None) {
-                    warn!("write_to_device error: {e}");
-                    continue;
-                }
-
-                current_timestamp = current_timestamp.wrapping_add(frames_available);
-
-                // Wait for WASAPI buffer-ready event
-                if let Err(e) = h_event.wait_for_event(100) {
-                    warn!("WASAPI event wait error: {e}");
-                }
-            }
-        }
-    }
-
-    audio_client.stop_stream().ok();
+    shutdown.store(true, Ordering::Relaxed);
     server.stop_receiver().await;
     server.shutdown().await;
+    wasapi_thread.join().ok();
     info!("Shutdown complete");
     Ok(())
 }
