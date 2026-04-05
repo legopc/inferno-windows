@@ -16,7 +16,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use log::{info, warn, error};
+use log::{info, warn};
 
 use inferno_aoip::device_server::{DeviceServer, Settings};
 
@@ -27,7 +27,14 @@ struct Args {
     #[arg(long)]
     list_devices: bool,
 
-    /// Name of the WASAPI device to use (substring match; default: system default)
+    /// Route audio to a virtual audio cable (e.g. VB-Cable) so it appears as a
+    /// Windows sound device. Auto-detects "CABLE Input" (VB-Cable) if installed.
+    /// Install VB-Cable free from https://vb-audio.com/Cable/
+    #[arg(long)]
+    virtual_device: bool,
+
+    /// Name of the WASAPI device to use (substring match; default: system default).
+    /// Use --list-devices to see available names.
     #[arg(long)]
     device: Option<String>,
 
@@ -46,7 +53,7 @@ struct Args {
 
 fn list_wasapi_devices() -> Result<()> {
     use wasapi::*;
-    initialize_mta().ok();
+    let _ = initialize_mta();
     let collection = DeviceCollection::new(&Direction::Render)
         .map_err(|e| anyhow!("Failed to enumerate WASAPI render devices: {e}"))?;
     println!("Available WASAPI render devices:");
@@ -64,25 +71,44 @@ fn list_wasapi_devices() -> Result<()> {
 }
 
 /// Open the requested (or default) WASAPI render device by name substring.
-fn open_wasapi_device(device_filter: &Option<String>) -> Result<wasapi::Device> {
+/// If `virtual_device` is true, tries "CABLE Input" (VB-Cable) first and
+/// errors with install instructions if not found.
+fn open_wasapi_device(device_filter: &Option<String>, virtual_device: bool) -> Result<wasapi::Device> {
     use wasapi::*;
-    initialize_mta().ok();
-    if let Some(name_filter) = device_filter {
-        let collection = DeviceCollection::new(&Direction::Render)
-            .map_err(|e| anyhow!("Failed to enumerate WASAPI render devices: {e}"))?;
-        for dev in &collection {
-            if let Ok(d) = dev {
-                if let Ok(name) = d.get_friendlyname() {
-                    if name.contains(name_filter.as_str()) {
-                        return Ok(d);
-                    }
+    let _ = initialize_mta();
+
+    // Resolve the name to search for
+    let search = if let Some(f) = device_filter.as_deref() {
+        f.to_owned()
+    } else if virtual_device {
+        "CABLE Input".to_owned()
+    } else {
+        // No filter: return system default
+        return get_default_device(&Direction::Render)
+            .map_err(|e| anyhow!("Failed to get default WASAPI device: {e}"));
+    };
+
+    let collection = DeviceCollection::new(&Direction::Render)
+        .map_err(|e| anyhow!("Failed to enumerate WASAPI render devices: {e}"))?;
+    for dev in &collection {
+        if let Ok(d) = dev {
+            if let Ok(name) = d.get_friendlyname() {
+                if name.contains(search.as_str()) {
+                    return Ok(d);
                 }
             }
         }
-        Err(anyhow!("No WASAPI device found matching '{name_filter}'"))
+    }
+
+    if virtual_device && device_filter.is_none() {
+        Err(anyhow!(
+            "VB-Cable not found (looked for \"CABLE Input\").\n\
+             Install it free from https://vb-audio.com/Cable/ then reboot.\n\
+             After install, run again with --virtual-device to route Dante audio\n\
+             to the \"CABLE Output\" recording device visible to all Windows apps."
+        ))
     } else {
-        get_default_device(&Direction::Render)
-            .map_err(|e| anyhow!("Failed to get default WASAPI device: {e}"))
+        Err(anyhow!("No WASAPI device found matching '{search}'"))
     }
 }
 
@@ -94,6 +120,7 @@ fn open_wasapi_device(device_filter: &Option<String>) -> Result<wasapi::Device> 
 /// exactly when the driver needs more data.
 fn wasapi_render_thread(
     device_filter: Option<String>,
+    virtual_device: bool,
     sample_rate: u32,
     channels: usize,
     audio_queue: Arc<Mutex<VecDeque<i32>>>,
@@ -101,9 +128,9 @@ fn wasapi_render_thread(
     ready_tx: std::sync::mpsc::SyncSender<Result<String, String>>,
 ) {
     use wasapi::*;
-    initialize_mta().ok();
+    let _ = initialize_mta();
 
-    let device = match open_wasapi_device(&device_filter) {
+    let device = match open_wasapi_device(&device_filter, virtual_device) {
         Ok(d) => d,
         Err(e) => { ready_tx.send(Err(e.to_string())).ok(); return; }
     };
@@ -114,7 +141,10 @@ fn wasapi_render_thread(
         Err(e) => { ready_tx.send(Err(format!("get_iaudioclient: {e}"))).ok(); return; }
     };
 
-    let format = WaveFormat::new(32, 32, &SampleType::Int, sample_rate as usize, channels, None);
+    // WASAPI Shared mode mix format is always f32 on modern Windows/Realtek.
+    // inferno_aoip delivers 24-bit samples LEFT-JUSTIFIED in i32 (top 24 bits,
+    // bottom 8 bits = 0), so the range is ±2^31. Divide by 2^31 to get f32 [-1, 1].
+    let format = WaveFormat::new(32, 32, &SampleType::Float, sample_rate as usize, channels, None);
     let blockalign = format.get_blockalign() as usize;
 
     let (def_period, _min_period) = match audio_client.get_periods() {
@@ -138,7 +168,7 @@ fn wasapi_render_thread(
         ready_tx.send(Err(format!("start_stream: {e}"))).ok(); return;
     }
 
-    info!("WASAPI render thread started: {device_name} (blockalign={blockalign})");
+    info!("WASAPI render thread started: {device_name} (blockalign={blockalign}, format=f32)");
     ready_tx.send(Ok(device_name)).ok();
 
     while !shutdown.load(Ordering::Relaxed) {
@@ -154,15 +184,17 @@ fn wasapi_render_thread(
         };
 
         let needed = frames * channels;
-        let mut pcm = vec![0i32; needed];
+        // Convert from i32 (24-bit left-justified, range ±2^31) to f32 [-1.0, 1.0]
+        let mut pcm_f32 = vec![0.0f32; needed];
         {
             let mut q = audio_queue.lock().unwrap();
-            for s in pcm.iter_mut() {
-                *s = q.pop_front().unwrap_or(0);
+            for s in pcm_f32.iter_mut() {
+                let raw = q.pop_front().unwrap_or(0);
+                *s = raw as f32 / 2147483648.0_f32;
             }
         }
 
-        let bytes: Vec<u8> = pcm.iter().flat_map(|s| s.to_le_bytes()).collect();
+        let bytes: Vec<u8> = pcm_f32.iter().flat_map(|s| s.to_le_bytes()).collect();
         if let Err(e) = render_client.write_to_device(frames, &bytes, None) {
             warn!("write_to_device: {e}");
         }
@@ -219,15 +251,22 @@ async fn main() -> Result<()> {
     let channels = args.channels;
     let sample_rate = args.sample_rate;
     let device_filter = args.device.clone();
+    let virtual_device = args.virtual_device;
     let wasapi_thread = std::thread::Builder::new()
         .name("wasapi-render".into())
         .spawn(move || {
-            wasapi_render_thread(device_filter, sample_rate, channels, audio_queue_wasapi, shutdown_wasapi, ready_tx);
+            wasapi_render_thread(device_filter, virtual_device, sample_rate, channels, audio_queue_wasapi, shutdown_wasapi, ready_tx);
         })?;
 
     // Wait for WASAPI thread to confirm it started
     match ready_rx.recv() {
-        Ok(Ok(dev_name)) => info!("WASAPI ready: {dev_name}"),
+        Ok(Ok(dev_name)) => {
+            info!("WASAPI ready: {dev_name}");
+            if args.virtual_device || dev_name.contains("CABLE") {
+                info!("Audio will be available on \"CABLE Output\" in Windows Sound settings");
+                info!("Select \"CABLE Output\" as input device in OBS, Audacity, or any app");
+            }
+        }
         Ok(Err(e)) => return Err(anyhow!("WASAPI init failed: {e}")),
         Err(_) => return Err(anyhow!("WASAPI thread died before signalling ready")),
     }
