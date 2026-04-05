@@ -1,0 +1,8 @@
+[workspace]
+resolver = "2"
+members = [
+    "inferno_aoip",
+    "searchfire",
+    "usrvclock",
+    "inferno_wasapi",
+]
