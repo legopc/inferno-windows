@@ -115,11 +115,21 @@ impl SafeClock {
 /// On Windows, this is unused (no Unix domain socket support).
 pub const DEFAULT_SERVER_SOCKET_PATH: &str = r"\\.\pipe\ptp-usrvclock";
 
+fn system_time_overlay() -> ClockOverlay {
+    let now_ns = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos() as i64)
+        .unwrap_or(0);
+    // shift=0, freq_scale=0.0: pass system time through unchanged (no PTP correction)
+    ClockOverlay { clock_id: 0, last_sync: now_ns, shift: 0, freq_scale: 0.0 }
+}
+
 /// Async client for the usrvclock protocol.
 ///
-/// On Windows, this is a stub that never delivers clock overlays.
-/// A future implementation could use a named pipe or UDP socket to receive
-/// clock data from a Windows PTP daemon.
+/// On Windows, no PTP daemon is available. This stub delivers a system-time-based
+/// `ClockOverlay` immediately on start, and refreshes it every second so that
+/// `MediaClock::wrapping_now_in_timebase()` always returns a valid timestamp.
+/// Audio will play without PTP-corrected timing (some drift expected).
 #[cfg(feature = "tokio")]
 pub struct AsyncClient {
     sender: tokio::sync::watch::Sender<Option<ClockOverlay>>,
@@ -129,20 +139,26 @@ pub struct AsyncClient {
 
 #[cfg(feature = "tokio")]
 impl AsyncClient {
-    /// Starts the async client. On Windows, this spawns a no-op task that
-    /// waits for shutdown. No clock overlays will be delivered.
+    /// Starts the async client. Immediately sends a system-time overlay and
+    /// refreshes it every second so `MediaClock` always has a valid timestamp.
     pub fn start(_path: PathBuf, _error_handler: Box<dyn FnMut(OverlayReceiveError) + Send>) -> Self {
-        let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel();
-        let (tx, _rx) = tokio::sync::watch::channel(None);
+        let (shutdown_tx, mut shutdown_rx) = tokio::sync::oneshot::channel();
+        let (tx, _rx) = tokio::sync::watch::channel(Some(system_time_overlay()));
+        let tx2 = tx.clone();
         let join_handle = tokio::spawn(async move {
-            // Windows stub: wait for shutdown signal, never deliver clock overlays.
-            let _ = shutdown_rx.await;
+            loop {
+                tokio::select! {
+                    _ = &mut shutdown_rx => break,
+                    _ = tokio::time::sleep(std::time::Duration::from_secs(1)) => {
+                        let _ = tx2.send(Some(system_time_overlay()));
+                    }
+                }
+            }
         });
         Self { sender: tx, shutdown: Some(shutdown_tx), join_handle: Some(join_handle) }
     }
 
     /// Subscribes to clock overlay updates.
-    /// On Windows, this receiver will never receive a value (always None).
     pub fn subscribe(&self) -> tokio::sync::watch::Receiver<Option<ClockOverlay>> {
         self.sender.subscribe()
     }
