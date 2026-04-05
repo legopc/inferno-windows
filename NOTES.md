@@ -60,10 +60,53 @@ netsh advfirewall firewall add rule name="Inferno-Dante UDP 5353" protocol=UDP d
 
 ## Runtime Status (confirmed)
 
-Tested on Windows 10 with Realtek Audio:
+Tested on Windows 10 with Realtek Audio + VB-Cable:
 - `inferno_wasapi --list-devices` — enumerates WASAPI devices correctly
-- `inferno_wasapi` — starts, detects IP/hostname, initializes WASAPI, begins streaming loop
+- `inferno_wasapi --virtual-device` — routes Dante audio to "CABLE Input"; any app can read from "CABLE Output"
+- `inferno_wasapi` — plays directly through default speakers
 - Device name (`F53ZDD3`) and IP (`192.168.1.37`) are detected from system
 - State storage uses `AppData\Local\inferno_aoip\` (normal on first run to warn about missing state file)
-- Without PTP sync, `clock_synced` stays false → output is silence (see PTP section above)
-- Dante device **should appear in Dante Controller** once firewall ports are open
+- Dante device appears in **Dante Controller** once firewall ports are open
+- Channel subscriptions confirmed working (RX 1, RX 2)
+- Audio flows Dante → inferno_wasapi → WASAPI (f32 format, 48kHz stereo)
+
+## Virtual Audio Device
+
+**Current approach**: VB-Cable (free donationware, https://vb-audio.com/Cable/) is used as a
+virtual audio cable. inferno_wasapi renders Dante audio to "CABLE Input"; Windows apps see
+"CABLE Output" as a standard recording device.
+
+Install: `.\scripts\install-vbcable.ps1` (requires admin)
+
+Run: `.\target\release\inferno_wasapi.exe --virtual-device`
+
+**Open-source alternative**: [VirtualDrivers/Virtual-Audio-Driver](https://github.com/VirtualDrivers/Virtual-Audio-Driver)
+is a SYSVAD-based open-source WDM virtual audio driver. It requires:
+- Windows Driver Kit (WDK) to build
+- Test signing mode (`bcdedit -set TESTSIGNING ON`, Secure Boot disabled)
+- More setup complexity than VB-Cable
+
+VB-Cable is recommended for ease of use. The open-source driver is an option for
+distributions that cannot include a donationware dependency.
+
+**Kernel driver (full self-contained, no VB-Cable)**: A proper WDM driver built from
+[Microsoft SYSVAD](https://github.com/microsoft/windows-driver-samples/tree/main/audio/sysvad)
+with a shared-memory IPC to the Rust user-mode service would eliminate the VB-Cable
+dependency entirely. This requires kernel C/C++ development, WDK, and an EV code signing
+certificate for production distribution. See git history for the detailed plan.
+
+## Audio Sample Format
+
+inferno_aoip delivers audio as `i32` (type alias `Sample`) with 24-bit values stored
+**left-justified** (top 24 bits used, bottom 8 bits = 0), range ±2³¹. This is documented
+in `inferno_aoip/src/device_server/samples_utils.rs` lines 84-90.
+
+WASAPI Shared mode on modern Windows requires **f32** (IEEE float, range [-1.0, 1.0]).
+Conversion: `sample as f32 / 2147483648.0_f32`
+
+## Unknown ARC Opcode 0x2204
+
+Dante Controller sends opcode `0x2204` which is not implemented in inferno_aoip.
+These `received unknown opcode1 0x2204` log errors are harmless — they are informational
+queries from Dante Controller that don't affect audio flow.
+
