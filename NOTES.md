@@ -35,12 +35,12 @@ safer for general use.
 
 ## Firewall
 
-UDP ports that must be open for Dante to work:
-- 4455 — Dante audio RX flows
-- 8700 — Dante audio TX flows  
-- 4400 — Dante ARC (Audio Routing & Control)
-- 8800 — Dante CMC
-- 5353 — mDNS (Multicast DNS for device discovery)
+UDP ports that must be open for Dante to work (from inferno_aoip source code):
+- **4440** — Dante ARC (Audio Routing & Control) — `proto_arc.rs`
+- **4455** — Dante flows control — `flows_control.rs`
+- **8700** — Dante info/mcast requests — `mcast.rs`
+- **8800** — Dante CMC — `proto_cmc.rs`
+- **5353** — mDNS (Multicast DNS for device discovery)
 
 Also allow incoming UDP from all ports (Dante transmitter source ports are OS-assigned).
 
