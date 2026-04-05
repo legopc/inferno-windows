@@ -34,8 +34,9 @@ foreach ($entry in $ports) {
 
 # Also allow the executable by name (Windows may block it regardless of port rules)
 $exePath = Join-Path $PSScriptRoot "..\target\release\inferno_wasapi.exe"
-$exePath = (Resolve-Path $exePath -ErrorAction SilentlyContinue)?.Path
-if ($exePath) {
+$resolved = Resolve-Path $exePath -ErrorAction SilentlyContinue
+if ($resolved) {
+    $exePath = $resolved.Path
     Write-Host "Adding executable rule for: $exePath"
     netsh advfirewall firewall delete rule name="Inferno-WASAPI" 2>$null | Out-Null
     netsh advfirewall firewall add rule `
@@ -45,7 +46,7 @@ if ($exePath) {
         program="$exePath" `
         protocol=UDP | Out-Null
 } else {
-    Write-Warning "Could not find inferno_wasapi.exe — run 'cargo build --release -p inferno_wasapi' first, then re-run this script."
+    Write-Warning "Could not find inferno_wasapi.exe -- run 'cargo build --release -p inferno_wasapi' first, then re-run this script."
 }
 
 Write-Host ""
