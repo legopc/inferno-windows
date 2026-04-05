@@ -168,8 +168,11 @@ fn wasapi_render_thread(
         ready_tx.send(Err(format!("start_stream: {e}"))).ok(); return;
     }
 
-    info!("WASAPI render thread started: {device_name} (blockalign={blockalign}, format=f32)");
+    info!("WASAPI render thread started: {device_name} (blockalign={blockalign}, format=f32, {sample_rate}Hz, {channels}ch)");
     ready_tx.send(Ok(device_name)).ok();
+
+    let mut frames_written_total: u64 = 0;
+    let mut first_audio_logged = false;
 
     while !shutdown.load(Ordering::Relaxed) {
         match h_event.wait_for_event(200) {
@@ -186,17 +189,35 @@ fn wasapi_render_thread(
         let needed = frames * channels;
         // Convert from i32 (24-bit left-justified, range ±2^31) to f32 [-1.0, 1.0]
         let mut pcm_f32 = vec![0.0f32; needed];
+        let samples_from_queue;
         {
             let mut q = audio_queue.lock().unwrap();
+            samples_from_queue = q.len().min(needed);
             for s in pcm_f32.iter_mut() {
                 let raw = q.pop_front().unwrap_or(0);
                 *s = raw as f32 / 2147483648.0_f32;
             }
         }
 
+        // Log first time we write real audio (not silence)
+        if !first_audio_logged && samples_from_queue > 0 {
+            info!("WASAPI: writing first audio ({samples_from_queue} samples from Dante queue)");
+            first_audio_logged = true;
+        }
+
         let bytes: Vec<u8> = pcm_f32.iter().flat_map(|s| s.to_le_bytes()).collect();
-        if let Err(e) = render_client.write_to_device(frames, &bytes, None) {
-            warn!("write_to_device: {e}");
+        match render_client.write_to_device(frames, &bytes, None) {
+            Ok(()) => {
+                frames_written_total += frames as u64;
+                // Log every ~10 seconds at 48kHz to confirm data is flowing
+                if frames_written_total % (sample_rate as u64 * 10) < frames as u64 {
+                    let secs = frames_written_total / sample_rate as u64;
+                    let queue_samples;
+                    { queue_samples = audio_queue.lock().unwrap().len(); }
+                    info!("WASAPI: {secs}s rendered, queue depth: {queue_samples} samples");
+                }
+            }
+            Err(e) => warn!("write_to_device: {e}"),
         }
     }
 
