@@ -43,3 +43,27 @@ UDP ports that must be open for Dante to work:
 - 5353 — mDNS (Multicast DNS for device discovery)
 
 Also allow incoming UDP from all ports (Dante transmitter source ports are OS-assigned).
+
+**Opening the firewall (requires admin)**:
+```powershell
+# From an elevated PowerShell window:
+.\scripts\open-firewall-admin.ps1
+```
+Or manually:
+```
+netsh advfirewall firewall add rule name="Inferno-Dante UDP 4455" protocol=UDP dir=in localport=4455 action=allow
+netsh advfirewall firewall add rule name="Inferno-Dante UDP 8700" protocol=UDP dir=in localport=8700 action=allow
+netsh advfirewall firewall add rule name="Inferno-Dante UDP 4400" protocol=UDP dir=in localport=4400 action=allow
+netsh advfirewall firewall add rule name="Inferno-Dante UDP 8800" protocol=UDP dir=in localport=8800 action=allow
+netsh advfirewall firewall add rule name="Inferno-Dante UDP 5353" protocol=UDP dir=in localport=5353 action=allow
+```
+
+## Runtime Status (confirmed)
+
+Tested on Windows 10 with Realtek Audio:
+- `inferno_wasapi --list-devices` — enumerates WASAPI devices correctly
+- `inferno_wasapi` — starts, detects IP/hostname, initializes WASAPI, begins streaming loop
+- Device name (`F53ZDD3`) and IP (`192.168.1.37`) are detected from system
+- State storage uses `AppData\Local\inferno_aoip\` (normal on first run to warn about missing state file)
+- Without PTP sync, `clock_synced` stays false → output is silence (see PTP section above)
+- Dante device **should appear in Dante Controller** once firewall ports are open
