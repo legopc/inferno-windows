@@ -203,12 +203,23 @@ fn wasapi_render_thread(
 
     let mut frames_written_total: u64 = 0;
     let mut first_audio_logged = false;
+    let mut render_loop_count: u64 = 0;
+    let mut last_stats_log = std::time::Instant::now();
 
     while !shutdown.load(Ordering::Relaxed) {
         match h_event.wait_for_event(200) {
-            Err(_) => continue, // timeout, loop and check shutdown
+            Err(_) => {
+                // timeout — log every 5s if loop is running but no events fire
+                if last_stats_log.elapsed().as_secs() >= 5 {
+                    let queue_depth = audio_queue.lock().unwrap().len();
+                    info!("WASAPI: render alive (loop={render_loop_count}, frames_total={frames_written_total}, queue={queue_depth})");
+                    last_stats_log = std::time::Instant::now();
+                }
+                continue;
+            }
             Ok(()) => {}
         }
+        render_loop_count += 1;
 
         let frames = match audio_client.get_available_space_in_frames() {
             Ok(n) if n > 0 => n as usize,
@@ -255,11 +266,12 @@ fn wasapi_render_thread(
             Ok(()) => {
                 frames_written_total += frames as u64;
                 // Log every ~10 seconds to confirm data is flowing
-                if frames_written_total % (dev_sample_rate as u64 * 10) < frames as u64 {
-                    let secs = frames_written_total / dev_sample_rate as u64;
+                if last_stats_log.elapsed().as_secs() >= 10 {
                     let queue_samples;
                     { queue_samples = audio_queue.lock().unwrap().len(); }
-                    info!("WASAPI: {secs}s rendered, queue depth: {queue_samples} samples");
+                    let secs = frames_written_total / dev_sample_rate as u64;
+                    info!("WASAPI: {secs}s rendered, loops={render_loop_count}, queue depth: {queue_samples} samples");
+                    last_stats_log = std::time::Instant::now();
                 }
             }
             Err(e) => warn!("write_to_device: {e}"),
