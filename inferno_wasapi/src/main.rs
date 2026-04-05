@@ -141,11 +141,39 @@ fn wasapi_render_thread(
         Err(e) => { ready_tx.send(Err(format!("get_iaudioclient: {e}"))).ok(); return; }
     };
 
-    // WASAPI Shared mode mix format is always f32 on modern Windows/Realtek.
-    // inferno_aoip delivers 24-bit samples LEFT-JUSTIFIED in i32 (top 24 bits,
-    // bottom 8 bits = 0), so the range is ±2^31. Divide by 2^31 to get f32 [-1, 1].
-    let format = WaveFormat::new(32, 32, &SampleType::Float, sample_rate as usize, channels, None);
+    // Query and log the device's native mix format for diagnostics
+    let mix_fmt = audio_client.get_mixformat().ok();
+    if let Some(ref mf) = mix_fmt {
+        info!("WASAPI mix format: {:?}bit {:?}bit-valid {:?}Hz {:?}ch {:?}",
+            mf.get_bitspersample(), mf.get_validbitspersample(),
+            mf.get_samplespersec(), mf.get_nchannels(),
+            mf.get_subformat().map(|s| format!("{s:?}")).unwrap_or_else(|_| "?".into()));
+    }
+
+    // Prefer f32 at the requested sample rate. If the device doesn't support it
+    // directly, fall back to whatever format the device natively uses.
+    let preferred = WaveFormat::new(32, 32, &SampleType::Float, sample_rate as usize, channels, None);
+    let format = match audio_client.is_supported(&preferred, &ShareMode::Shared) {
+        Ok(None) => {
+            info!("WASAPI: device supports f32 {sample_rate}Hz {channels}ch directly");
+            preferred
+        }
+        Ok(Some(nearest)) => {
+            info!("WASAPI: f32 not directly supported, using nearest: {:?}bit {:?}Hz {:?}ch",
+                nearest.get_bitspersample(), nearest.get_samplespersec(), nearest.get_nchannels());
+            nearest
+        }
+        Err(e) => {
+            // is_supported failed — try mix format, else use our preferred and let initialize fail loudly
+            warn!("WASAPI is_supported query failed ({e}), trying mix format");
+            mix_fmt.clone().unwrap_or(preferred)
+        }
+    };
+
     let blockalign = format.get_blockalign() as usize;
+    let dev_channels = format.get_nchannels() as usize;
+    let dev_sample_rate = format.get_samplespersec();
+    let is_float = format.get_subformat().map(|s| matches!(s, SampleType::Float)).unwrap_or(true);
 
     let (def_period, _min_period) = match audio_client.get_periods() {
         Ok(p) => p,
@@ -168,7 +196,9 @@ fn wasapi_render_thread(
         ready_tx.send(Err(format!("start_stream: {e}"))).ok(); return;
     }
 
-    info!("WASAPI render thread started: {device_name} (blockalign={blockalign}, format=f32, {sample_rate}Hz, {channels}ch)");
+    info!("WASAPI render thread started: {device_name} ({dev_sample_rate}Hz, {dev_channels}ch, {}bit, {})",
+        format.get_bitspersample(),
+        if is_float { "float" } else { "int" });
     ready_tx.send(Ok(device_name)).ok();
 
     let mut frames_written_total: u64 = 0;
@@ -186,18 +216,34 @@ fn wasapi_render_thread(
             Err(e) => { warn!("get_available_space_in_frames: {e}"); continue; }
         };
 
-        let needed = frames * channels;
-        // Convert from i32 (24-bit left-justified, range ±2^31) to f32 [-1.0, 1.0]
-        let mut pcm_f32 = vec![0.0f32; needed];
+        // frames * dev_channels = total samples needed for the device buffer
+        let needed = frames * dev_channels;
+        // Drain from the queue (which holds Dante source channel interleaved i32 samples).
+        // If the device has more channels than we have from Dante, extra channels get silence.
         let samples_from_queue;
-        {
+        let bytes: Vec<u8> = {
             let mut q = audio_queue.lock().unwrap();
             samples_from_queue = q.len().min(needed);
-            for s in pcm_f32.iter_mut() {
-                let raw = q.pop_front().unwrap_or(0);
-                *s = raw as f32 / 2147483648.0_f32;
+            let mut buf = Vec::with_capacity(needed * blockalign / dev_channels);
+            if is_float {
+                // f32 LE: convert i32 (24-bit left-justified, ±2^31) to f32 [-1, 1]
+                for _ in 0..needed {
+                    let raw = q.pop_front().unwrap_or(0);
+                    let f: f32 = raw as f32 / 2147483648.0_f32;
+                    buf.extend_from_slice(&f.to_le_bytes());
+                }
+            } else {
+                // Int (e.g. 24-bit or 32-bit PCM): write raw i32 LE (already left-justified)
+                let bytes_per_sample = blockalign / dev_channels;
+                for _ in 0..needed {
+                    let raw = q.pop_front().unwrap_or(0);
+                    // Most-significant bytes first → right-align to device bits
+                    let shifted = raw >> (32 - bytes_per_sample * 8);
+                    buf.extend_from_slice(&shifted.to_le_bytes()[..bytes_per_sample]);
+                }
             }
-        }
+            buf
+        };
 
         // Log first time we write real audio (not silence)
         if !first_audio_logged && samples_from_queue > 0 {
@@ -205,13 +251,12 @@ fn wasapi_render_thread(
             first_audio_logged = true;
         }
 
-        let bytes: Vec<u8> = pcm_f32.iter().flat_map(|s| s.to_le_bytes()).collect();
         match render_client.write_to_device(frames, &bytes, None) {
             Ok(()) => {
                 frames_written_total += frames as u64;
-                // Log every ~10 seconds at 48kHz to confirm data is flowing
-                if frames_written_total % (sample_rate as u64 * 10) < frames as u64 {
-                    let secs = frames_written_total / sample_rate as u64;
+                // Log every ~10 seconds to confirm data is flowing
+                if frames_written_total % (dev_sample_rate as u64 * 10) < frames as u64 {
+                    let secs = frames_written_total / dev_sample_rate as u64;
                     let queue_samples;
                     { queue_samples = audio_queue.lock().unwrap().len(); }
                     info!("WASAPI: {secs}s rendered, queue depth: {queue_samples} samples");
