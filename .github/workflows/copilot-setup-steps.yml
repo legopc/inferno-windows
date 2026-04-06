@@ -1,0 +1,52 @@
+name: "Copilot Setup Steps"
+
+# Runs automatically when this file changes (for validation), and can be triggered manually.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # Job MUST be named exactly `copilot-setup-steps` to be picked up by Copilot cloud agent.
+  copilot-setup-steps:
+    # Target the Windows self-hosted runner registered on the dev VM.
+    # See SETUP.md §8 and scripts/setup-github-runner.ps1 for registration instructions.
+    runs-on: [self-hosted, windows, x64]
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # Rust toolchain — rustup must already be installed on the runner image.
+      # See SETUP.md §5 / scripts/setup-dev-machine.ps1 for rustup installation.
+      - name: Install Rust stable (MSVC)
+        run: rustup toolchain install stable-x86_64-pc-windows-msvc --no-self-update
+        shell: pwsh
+
+      - name: Set default Rust toolchain
+        run: rustup default stable-x86_64-pc-windows-msvc
+        shell: pwsh
+
+      # Cache the cargo registry and build artifacts across Copilot sessions.
+      - name: Cache cargo registry and target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: windows-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            windows-cargo-
+
+      # Pre-fetch all dependencies so Copilot doesn't need network during the build.
+      - name: Fetch cargo dependencies
+        run: cargo fetch
+        shell: pwsh

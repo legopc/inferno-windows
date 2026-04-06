@@ -1,9 +1,12 @@
-//! inferno_wasapi — Dante AoIP receiver for Windows via WASAPI
+//! inferno_wasapi — Dante AoIP receiver/transmitter for Windows via WASAPI
 //!
-//! Receives audio from a Dante network and plays it through Windows audio
-//! devices using WASAPI (Windows Audio Session API).
+//! RX mode: receives audio from a Dante network and plays it through Windows
+//! audio devices using WASAPI (Windows Audio Session API).
 //!
-//! Architecture:
+//! TX mode (--tx): captures system audio via WASAPI loopback from a render
+//! device and transmits it to a Dante AoIP network.
+//!
+//! Architecture (RX):
 //! - inferno_aoip drives timing via a 50ms callback (receive_with_callback)
 //! - A shared audio queue (VecDeque) bridges the async callback to a dedicated
 //!   WASAPI render thread
@@ -21,7 +24,7 @@ use log::{info, warn};
 use inferno_aoip::device_server::{DeviceServer, Settings};
 
 #[derive(Parser, Debug)]
-#[command(name = "inferno_wasapi", about = "Dante AoIP receiver for Windows via WASAPI")]
+#[command(name = "inferno_wasapi", about = "Dante AoIP receiver/transmitter for Windows via WASAPI")]
 struct Args {
     /// List available WASAPI audio output devices and exit
     #[arg(long)]
@@ -49,6 +52,24 @@ struct Args {
     /// Sample rate in Hz (default: 48000)
     #[arg(long, default_value = "48000")]
     sample_rate: u32,
+
+    /// Enable TX mode: capture system audio via WASAPI loopback and transmit to Dante.
+    /// The virtual speaker (SYSVAD) must be installed — see SETUP.md.
+    #[arg(long)]
+    tx: bool,
+
+    /// WASAPI render device to loopback-capture from (substring match, default: system default).
+    /// Use --list-tx-devices to see available devices. Typically "Tablet Audio" for SYSVAD.
+    #[arg(long)]
+    tx_device: Option<String>,
+
+    /// Number of Dante TX channels (default: 2)
+    #[arg(long, default_value = "2")]
+    tx_channels: usize,
+
+    /// List WASAPI render devices available for TX loopback capture and exit.
+    #[arg(long)]
+    list_tx_devices: bool,
 }
 
 fn list_wasapi_devices() -> Result<()> {
@@ -282,6 +303,154 @@ fn wasapi_render_thread(
     info!("WASAPI render thread stopped");
 }
 
+/// Dedicated WASAPI loopback capture thread for TX mode.
+///
+/// Captures whatever is playing on the given render device using
+/// WASAPI loopback, converts samples to 24-bit left-justified i32,
+/// de-interleaves into per-channel Vecs, and pushes to the TxPusher.
+fn wasapi_capture_thread(
+    device_filter: Option<String>,
+    _sample_rate: u32,
+    channels: usize,
+    tx_pusher: Arc<Mutex<inferno_aoip::TxPusher>>,
+    shutdown: Arc<AtomicBool>,
+    ready_tx: std::sync::mpsc::SyncSender<Result<String, String>>,
+) {
+    use wasapi::*;
+    let _ = initialize_mta();
+
+    let device = match open_wasapi_device(&device_filter, false) {
+        Ok(d) => d,
+        Err(e) => { ready_tx.send(Err(e.to_string())).ok(); return; }
+    };
+    let device_name = device.get_friendlyname().unwrap_or_else(|_| "Unknown".into());
+
+    let mut audio_client = match device.get_iaudioclient() {
+        Ok(c) => c,
+        Err(e) => { ready_tx.send(Err(format!("get_iaudioclient: {e}"))).ok(); return; }
+    };
+
+    // Use device's native mix format — autoconvert handles rate/channel differences
+    let mix_fmt = match audio_client.get_mixformat() {
+        Ok(f) => f,
+        Err(e) => { ready_tx.send(Err(format!("get_mixformat: {e}"))).ok(); return; }
+    };
+
+    info!("WASAPI loopback mix format: {:?}bit {:?}bit-valid {:?}Hz {:?}ch {:?}",
+        mix_fmt.get_bitspersample(), mix_fmt.get_validbitspersample(),
+        mix_fmt.get_samplespersec(), mix_fmt.get_nchannels(),
+        mix_fmt.get_subformat().map(|s| format!("{s:?}")).unwrap_or_else(|_| "?".into()));
+
+    let blockalign = mix_fmt.get_blockalign() as usize;
+    let dev_channels = mix_fmt.get_nchannels() as usize;
+    let is_float = mix_fmt.get_subformat().map(|s| matches!(s, SampleType::Float)).unwrap_or(true);
+    let bytes_per_sample = if dev_channels > 0 { blockalign / dev_channels } else { 4 };
+
+    // Initialize for loopback: Direction::Capture on a render device triggers
+    // AUDCLNT_STREAMFLAGS_LOOPBACK; period 0 is fine for shared mode.
+    if let Err(e) = audio_client.initialize_client(
+        &mix_fmt, 0, &Direction::Capture, &ShareMode::Shared, true,
+    ) {
+        ready_tx.send(Err(format!("initialize_client (loopback): {e}"))).ok(); return;
+    }
+
+    let capture_client = match audio_client.get_audiocaptureclient() {
+        Ok(c) => c,
+        Err(e) => { ready_tx.send(Err(format!("get_audiocaptureclient: {e}"))).ok(); return; }
+    };
+    let h_event = match audio_client.set_get_eventhandle() {
+        Ok(e) => e,
+        Err(e) => { ready_tx.send(Err(format!("set_get_eventhandle: {e}"))).ok(); return; }
+    };
+    if let Err(e) = audio_client.start_stream() {
+        ready_tx.send(Err(format!("start_stream: {e}"))).ok(); return;
+    }
+
+    info!("WASAPI loopback capture started: {device_name} ({dev_channels}ch, {}bit, {})",
+        mix_fmt.get_bitspersample(),
+        if is_float { "float" } else { "int" });
+    ready_tx.send(Ok(device_name)).ok();
+
+    let mut frames_captured_total: u64 = 0;
+    let mut events_total: u64 = 0;
+    let mut last_stats_log = std::time::Instant::now();
+
+    while !shutdown.load(Ordering::Relaxed) {
+        match h_event.wait_for_event(200) {
+            Err(_) => {
+                if last_stats_log.elapsed().as_secs() >= 10 {
+                    info!("WASAPI loopback: alive (events={events_total}, frames={frames_captured_total})");
+                    last_stats_log = std::time::Instant::now();
+                }
+                continue;
+            }
+            Ok(()) => {}
+        }
+        events_total += 1;
+
+        // Drain all available packets for this event
+        loop {
+            let nbr_frames = match capture_client.get_next_nbr_frames() {
+                Ok(Some(n)) if n > 0 => n as usize,
+                Ok(_) => break,
+                Err(e) => { warn!("get_next_nbr_frames: {e}"); break; }
+            };
+
+            let buf_size = nbr_frames * blockalign;
+            let mut data = vec![0u8; buf_size];
+            let (frames_read, _flags) = match capture_client.read_from_device(&mut data) {
+                Ok(r) => r,
+                Err(e) => { warn!("read_from_device: {e}"); break; }
+            };
+
+            if frames_read == 0 {
+                break;
+            }
+            let frames_read = frames_read as usize;
+            frames_captured_total += frames_read as u64;
+
+            // De-interleave into per-channel sample vecs; take only first `channels`
+            let mut channel_data: Vec<Vec<i32>> = vec![Vec::with_capacity(frames_read); channels];
+            for frame in 0..frames_read {
+                for ch in 0..channels {
+                    let sample = if ch < dev_channels {
+                        let offset = frame * blockalign + ch * bytes_per_sample;
+                        if offset + bytes_per_sample <= data.len() {
+                            let slice = &data[offset..offset + bytes_per_sample];
+                            if is_float && bytes_per_sample == 4 {
+                                let f = f32::from_le_bytes([slice[0], slice[1], slice[2], slice[3]]);
+                                (f.clamp(-1.0, 1.0) * 2147483648.0_f32) as i32
+                            } else {
+                                // PCM: read up to 4 bytes, left-shift to fill i32
+                                let mut bytes4 = [0u8; 4];
+                                let copy_len = bytes_per_sample.min(4);
+                                bytes4[..copy_len].copy_from_slice(&slice[..copy_len]);
+                                let shift = 32usize.saturating_sub(bytes_per_sample * 8);
+                                i32::from_le_bytes(bytes4) << shift
+                            }
+                        } else {
+                            0
+                        }
+                    } else {
+                        0 // pad missing channels with silence
+                    };
+                    channel_data[ch].push(sample);
+                }
+            }
+
+            tx_pusher.lock().unwrap().push_channels(&channel_data);
+        }
+
+        if last_stats_log.elapsed().as_secs() >= 10 {
+            info!("WASAPI loopback: events={events_total}, frames={frames_captured_total}");
+            last_stats_log = std::time::Instant::now();
+        }
+    }
+
+    audio_client.stop_stream().ok();
+    info!("WASAPI loopback capture thread stopped");
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let logenv = env_logger::Env::default().default_filter_or("info");
@@ -293,6 +462,11 @@ async fn main() -> Result<()> {
         return list_wasapi_devices();
     }
 
+    if args.list_tx_devices {
+        println!("Available WASAPI render devices for TX loopback:");
+        return list_wasapi_devices();
+    }
+
     info!("Starting inferno_wasapi");
 
     let device_name = args.name.unwrap_or_else(|| {
@@ -300,6 +474,63 @@ async fn main() -> Result<()> {
             .map(|h| h.to_string_lossy().into_owned())
             .unwrap_or_else(|_| "inferno-wasapi".to_owned())
     });
+
+    // ── TX mode ─────────────────────────────────────────────────────────────
+    if args.tx {
+        info!("TX mode: capturing system audio via WASAPI loopback → Dante");
+        info!("TX channels: {}", args.tx_channels);
+        info!("Sample rate: {} Hz", args.sample_rate);
+
+        let mut config: BTreeMap<String, String> = BTreeMap::new();
+        config.insert("TX_CHANNELS".to_owned(), args.tx_channels.to_string());
+        config.insert("RX_CHANNELS".to_owned(), "0".to_owned());
+        config.insert("SAMPLE_RATE".to_owned(), args.sample_rate.to_string());
+        config.insert("NAME".to_owned(), device_name.clone());
+
+        let settings = Settings::new("inferno_wasapi", "InfernoWASPI", None, &config);
+        info!("Device name: {}", settings.self_info.friendly_hostname);
+        info!("IP: {}", settings.self_info.ip_address);
+
+        let mut server = DeviceServer::start(settings).await;
+        info!("Dante device server started — device should appear in Dante Controller");
+
+        let tx_pusher = server.transmit_with_push(args.tx_channels).await;
+        let tx_pusher = Arc::new(Mutex::new(tx_pusher));
+
+        let shutdown = Arc::new(AtomicBool::new(false));
+        let shutdown_capture = shutdown.clone();
+
+        let (ready_tx, ready_rx) = std::sync::mpsc::sync_channel(1);
+        let tx_channels = args.tx_channels;
+        let sample_rate = args.sample_rate;
+        let tx_device = args.tx_device.clone();
+        let capture_thread = std::thread::Builder::new()
+            .name("wasapi-capture".into())
+            .spawn(move || {
+                wasapi_capture_thread(
+                    tx_device, sample_rate, tx_channels,
+                    tx_pusher, shutdown_capture, ready_tx,
+                );
+            })?;
+
+        match ready_rx.recv() {
+            Ok(Ok(dev_name)) => info!("WASAPI loopback capture ready: {dev_name}"),
+            Ok(Err(e)) => return Err(anyhow!("WASAPI loopback init failed: {e}")),
+            Err(_) => return Err(anyhow!("WASAPI capture thread died before signalling ready")),
+        }
+
+        info!("Streaming WASAPI loopback → Dante. Press Ctrl+C to stop.");
+        tokio::signal::ctrl_c().await?;
+        info!("Ctrl+C received, shutting down TX");
+
+        shutdown.store(true, Ordering::Relaxed);
+        server.stop_transmitter().await;
+        server.shutdown().await;
+        capture_thread.join().ok();
+        info!("TX shutdown complete");
+        return Ok(());
+    }
+    // ── end TX mode ──────────────────────────────────────────────────────────
 
     let mut config: BTreeMap<String, String> = BTreeMap::new();
     config.insert("RX_CHANNELS".to_owned(), args.channels.to_string());

@@ -70,30 +70,35 @@ Tested on Windows 10 with Realtek Audio + VB-Cable:
 - Channel subscriptions confirmed working (RX 1, RX 2)
 - Audio flows Dante → inferno_wasapi → WASAPI (f32 format, 48kHz stereo)
 
-## Virtual Audio Device
+## Virtual Audio Device (TX — Send Windows Audio to Dante)
 
-**Current approach**: VB-Cable (free donationware, https://vb-audio.com/Cable/) is used as a
-virtual audio cable. inferno_wasapi renders Dante audio to "CABLE Input"; Windows apps see
-"CABLE Output" as a standard recording device.
+**Current approach**: [Microsoft SYSVAD `TabletAudioSample`](https://github.com/microsoft/Windows-driver-samples/tree/main/audio/sysvad)
+— an open-source (MIT) WDM kernel audio driver that registers a virtual speaker endpoint.
 
-Install: `.\scripts\install-vbcable.ps1` (requires admin)
+- Windows apps route audio to the SYSVAD virtual speaker
+- `inferno_wasapi --tx` captures that audio via WASAPI loopback and sends it over Dante
+- No VB-Cable or other third-party tools required
 
-Run: `.\target\release\inferno_wasapi.exe --virtual-device`
+Build and install: `.\scripts\install-sysvad.ps1` (requires admin, WDK, VS2022, test signing)
 
-**Open-source alternative**: [VirtualDrivers/Virtual-Audio-Driver](https://github.com/VirtualDrivers/Virtual-Audio-Driver)
-is a SYSVAD-based open-source WDM virtual audio driver. It requires:
-- Windows Driver Kit (WDK) to build
-- Test signing mode (`bcdedit -set TESTSIGNING ON`, Secure Boot disabled)
-- More setup complexity than VB-Cable
+See `SETUP.md` for full setup instructions including test signing and WDK installation.
 
-VB-Cable is recommended for ease of use. The open-source driver is an option for
-distributions that cannot include a donationware dependency.
+**Why WASAPI loopback works without modifying SYSVAD**: WASAPI loopback taps the Windows
+audio engine mix stream *before* it reaches the WDM driver DMA buffer. SYSVAD can discard
+its DMA buffer as-is; the loopback is handled at a higher level by the OS.
 
-**Kernel driver (full self-contained, no VB-Cable)**: A proper WDM driver built from
-[Microsoft SYSVAD](https://github.com/microsoft/windows-driver-samples/tree/main/audio/sysvad)
-with a shared-memory IPC to the Rust user-mode service would eliminate the VB-Cable
-dependency entirely. This requires kernel C/C++ development, WDK, and an EV code signing
-certificate for production distribution. See git history for the detailed plan.
+**Future — Shared memory bridge (lower latency)**: Modify SYSVAD to write the DMA render
+buffer into a named Windows shared memory section (`CreateFileMapping`). Rust reads via
+`OpenFileMapping` directly — eliminates the WASAPI overhead and reduces latency.
+
+**Driver signing for distribution**: Test signing is for development only. Production
+distribution requires attestation signing via Microsoft Partner Center with an EV code
+signing certificate. See:
+https://learn.microsoft.com/en-us/windows-hardware/drivers/dashboard/attestation-signing-a-kernel-driver-for-public-release
+
+**VB-Cable (legacy)**: Previously used as a virtual audio cable for routing Dante RX audio
+to other Windows apps. The SYSVAD-based TX approach replaces this for the send direction.
+VB-Cable scripts remain in `scripts/install-vbcable.ps1` for RX routing use cases.
 
 ## Audio Sample Format
 

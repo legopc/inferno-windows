@@ -94,6 +94,7 @@
 mod common;
 pub mod device_info;
 pub mod device_server;
+pub use crate::device_server::TxPusher;
 mod mdns_client;
 mod media_clock;
 mod protocol;

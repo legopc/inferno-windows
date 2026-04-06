@@ -58,6 +58,34 @@ pub struct TransferNotifier {
   pub max_interval_samples: Clock,
 }
 
+/// Ring-buffer write handle for push-based Dante TX.
+///
+/// Created by [`DeviceServer::transmit_with_push`].
+/// Feed audio by calling [`TxPusher::push_channels`] on each batch of frames.
+pub struct TxPusher {
+  inputs: Vec<ring_buffer::RBInput<Sample, ring_buffer::OwnedBuffer<AtomicSample>>>,
+  timestamp: usize,
+}
+
+impl TxPusher {
+  /// Push a batch of PCM frames — one `Vec<Sample>` per channel.
+  ///
+  /// All channel slices must have the same number of frames.
+  /// Samples are 24-bit left-justified in i32 (range ±2³¹), matching Dante's internal format.
+  pub fn push_channels(&mut self, channel_data: &[Vec<Sample>]) {
+    let n = channel_data.first().map(|c| c.len()).unwrap_or(0);
+    if n == 0 {
+      return;
+    }
+    for (ch, samples) in channel_data.iter().enumerate() {
+      if let Some(input) = self.inputs.get_mut(ch) {
+        input.write_from_at(self.timestamp, samples.iter().copied());
+      }
+    }
+    self.timestamp = self.timestamp.wrapping_add(n);
+  }
+}
+
 pub struct DeviceServer {
   pub self_info: Arc<DeviceInfo>,
   ref_instant: Instant,
@@ -367,6 +395,41 @@ impl DeviceServer {
   }
   pub async fn stop_transmitter(&mut self) {
     self.tx_shutdown_todo.take().unwrap().await;
+  }
+
+  /// Starts the Dante transmitter with a push-based ring buffer interface.
+  ///
+  /// Timestamps are seeded from `SystemTime` to align with the Windows `usrvclock` stub's
+  /// `MediaClock::now_in_timebase` behavior, ensuring the TX ring buffer is positioned
+  /// correctly relative to the Dante media clock.
+  ///
+  /// Returns a [`TxPusher`] handle. Call [`TxPusher::push_channels`] to feed audio frames.
+  pub async fn transmit_with_push(&mut self, channels: usize) -> TxPusher {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let sample_rate = self.self_info.sample_rate;
+
+    // Seed ring buffer at current media-clock position (SystemTime-based on Windows).
+    let now_ns = SystemTime::now()
+      .duration_since(UNIX_EPOCH)
+      .map(|d| d.as_nanos() as u64)
+      .unwrap_or(0);
+    let start_timestamp =
+      ((now_ns as u128 * sample_rate as u128) / 1_000_000_000u128) as usize;
+
+    // 2^17 = 131072 samples ≈ 2.7 s at 48 kHz — must be power of 2
+    const BUF_SIZE: usize = 131072;
+
+    let (inputs, outputs): (Vec<_>, Vec<_>) = (0..channels)
+      .map(|_| ring_buffer::new_owned::<Sample>(BUF_SIZE, start_timestamp, 0))
+      .unzip();
+
+    let rbs = outputs.iter().map(|rbo| rbo.shared().clone()).collect_vec();
+    *self.tx_peaks_supplier.write().unwrap() = Box::new(move || peaks_of_buffers(&rbs));
+
+    let current_timestamp = Arc::new(AtomicUsize::new(0));
+    self.transmit(None, outputs, current_timestamp, None).await;
+
+    TxPusher { inputs, timestamp: start_timestamp }
   }
 
   pub fn get_realtime_clock_receiver(&self) -> RealTimeClockReceiver {
