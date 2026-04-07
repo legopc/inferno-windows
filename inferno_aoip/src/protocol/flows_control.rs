@@ -7,7 +7,7 @@ opcode2 = 0315 = too many tx flows
 opcode2 = 0301 = sample rate mismatch
 */
 
-use log::{error, warn};
+use tracing::{error, warn};
 use std::{
   error::Error,
   io::ErrorKind,

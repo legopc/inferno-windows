@@ -14,6 +14,14 @@ use crate::protocol::proto_arc::PORT as ARC_PORT;
 use crate::protocol::proto_cmc::PORT as CMC_PORT;
 use crate::device_info::{Channel, DeviceInfo};
 
+fn model_number() -> String {
+  std::env::var("DANTE_MODEL_NUMBER")
+    .ok()
+    .and_then(|s| u32::from_str_radix(s.trim_start_matches("0x"), 16).ok())
+    .map(|num| format!("_{:014x}b", num))
+    .unwrap_or_else(|| "_000000000000000b".to_owned())
+}
+
 fn create_self_info(
   app_name: &str,
   short_app_name: &str,
@@ -106,6 +114,11 @@ fn create_self_info(
     .map(|s| s.parse().expect("invalid RX_LATENCY_NS, must be integer"))
     .unwrap_or(10_000_000);
 
+  let tx_latency_ns = settings
+    .get("TX_LATENCY_NS")
+    .map(|s| s.parse().expect("invalid TX_LATENCY_NS, must be integer"))
+    .unwrap_or(10_000_000);
+
   let mut result = DeviceInfo {
     ip_address: my_ipv4,
     netmask,
@@ -121,12 +134,13 @@ fn create_self_info(
     vendor_string: "Audinate Dante-compatible".to_owned(),
     factory_hostname: format!("{short_app_name}-{}", hex::encode(devid)),
     friendly_hostname,
-    model_number: "_000000000000000b".to_owned(),
+    model_number: model_number(),
     rx_channels: vec![],
     tx_channels: vec![],
     bits_per_sample: 24, // TODO make it configurable
     pcm_type: 0xe,
     latency_ns,
+    tx_latency_ns,
     sample_rate,
 
     arc_port: ARC_PORT,

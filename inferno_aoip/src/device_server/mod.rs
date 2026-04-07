@@ -4,6 +4,7 @@ use crate::media_clock::{
 };
 use crate::ring_buffer::{self, OwnedBuffer, ProxyToBuffer, ProxyToSamplesBuffer, RBOutput};
 use crate::state_storage::StateStorage;
+use crate::utils::LogAndForget;
 use atomic::Atomic;
 use flows_tx::FlowsTransmitter;
 use futures::{Future, FutureExt};
@@ -323,15 +324,17 @@ impl DeviceServer {
   ) {
     let clock_rx = self.clock_receiver.subscribe();
 
-    let (flows_tx_handle, flows_tx_thread) = flows_tx::FlowsTransmitter::start(
+    let (mut flows_tx_handle, flows_tx_thread) = flows_tx::FlowsTransmitter::start(
       self.self_info.clone(),
-      self.tx_latency_ns.try_into().unwrap(),
+      self.state_storage.clone(),
+      self.tx_latency_ns as usize,
       self.get_realtime_clock_receiver(),
       rb_outputs.clone(),
       start_time_rx,
       current_timestamp.clone(),
       on_transfer,
     );
+    flows_tx_handle.load_state().await.log_and_forget();
     *self.flows_tx.lock().await = Some(flows_tx_handle);
     let txm = TransmitMulticasts::new(
       self.tx_multicasts_by_channel.clone(),

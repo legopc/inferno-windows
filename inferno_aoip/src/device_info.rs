@@ -36,6 +36,7 @@ pub struct DeviceInfo {
   pub bits_per_sample: u8,
   pub pcm_type: u8, // usually 0xe, in older devices 4
   pub latency_ns: usize,
+  pub tx_latency_ns: u32,
   pub sample_rate: u32,
 
   pub arc_port: u16,

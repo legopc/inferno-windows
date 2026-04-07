@@ -2,15 +2,19 @@
 //!
 //! On Windows, PTP clock integration via Unix domain sockets is not available.
 //! This stub provides the same API as the Unix version but:
-//! - `ClockOverlay::now_ns()` uses `std::time::SystemTime` instead of a PTP-adjusted clock
-//! - `AsyncClient` never delivers clock overlays (no PTP daemon on Windows yet)
+//! - When a PTP daemon is available: `ClockOverlay::now_ns()` uses PTP-adjusted timestamps
+//! - When no PTP grandmaster: `SafeClock` uses QPC (QueryPerformanceCounter) for high-resolution free-running clock
 //!
 //! See NOTES.md in the workspace root for details on enabling PTP on Windows.
 
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use custom_error::custom_error;
+use windows::Win32::System::Performance::{QueryPerformanceCounter, QueryPerformanceFrequency};
+use windows::Win32::System::SystemInformation::GetSystemTimePreciseAsFileTime;
 
 const OVERLAY_SIZE_BYTES: usize = 40;
 const PROTOCOL_MAJOR_VERSION: u16 = 1;
@@ -86,10 +90,19 @@ impl ClockOverlay {
     }
 }
 
-/// Placeholder for SafeClock (not implemented on Windows).
-pub struct SafeClock;
+/// SafeClock using QPC for high-resolution free-running clock on Windows.
+/// Uses QueryPerformanceCounter (monotonic) anchored to GetSystemTimePreciseAsFileTime (~100ns resolution).
+pub struct SafeClock {
+    inner: Arc<Mutex<SafeClockInner>>,
+}
 
-/// Placeholder timestamp for SafeClock.
+struct SafeClockInner {
+    qpc_anchor: i64,
+    filetime_anchor: u64,  // 100ns intervals since 1601-01-01
+    qpc_freq: i64,
+}
+
+/// Timestamp from SafeClock.
 pub struct SafeTimestamp {
     pub nanos: i64,
     pub estimated: bool,
@@ -103,11 +116,69 @@ impl SafeTimestamp {
 
 impl SafeClock {
     pub fn new(_tolerance: f64, _timeout_ns: i64) -> Self {
-        Self
+        let mut freq = 0i64;
+        let mut counter = 0i64;
+        
+        unsafe {
+            let _ = QueryPerformanceFrequency(&mut freq);
+            let _ = QueryPerformanceCounter(&mut counter);
+        }
+        
+        // Get initial wall-clock anchor using GetSystemTimePreciseAsFileTime
+        let ft = unsafe { GetSystemTimePreciseAsFileTime() };
+        
+        let filetime = ((ft.dwHighDateTime as u64) << 32) | (ft.dwLowDateTime as u64);
+        
+        tracing::info!(
+            "SafeClock initialized: QPC freq={} Hz, anchor filetime={}, QPC counter={}",
+            freq, filetime, counter
+        );
+        
+        Self {
+            inner: Arc::new(Mutex::new(SafeClockInner {
+                qpc_anchor: counter,
+                filetime_anchor: filetime,
+                qpc_freq: freq,
+            })),
+        }
     }
 
     pub fn now(&mut self, overlay: &ClockOverlay) -> SafeTimestamp {
-        SafeTimestamp { nanos: overlay.now_ns(), estimated: false }
+        let inner = self.inner.lock().unwrap();
+        
+        let mut counter = 0i64;
+        unsafe {
+            let _ = QueryPerformanceCounter(&mut counter);
+        }
+        
+        let elapsed_ticks = counter.saturating_sub(inner.qpc_anchor);
+        
+        // Convert QPC ticks to 100ns intervals
+        // elapsed_100ns = (elapsed_ticks * 10_000_000) / qpc_freq
+        let elapsed_100ns = if inner.qpc_freq > 0 {
+            ((elapsed_ticks as u128).saturating_mul(10_000_000u128)) / (inner.qpc_freq as u128)
+        } else {
+            0
+        };
+        
+        // Current filetime in 100ns intervals since 1601-01-01
+        let current_filetime_100ns = inner.filetime_anchor.saturating_add(elapsed_100ns as u64);
+        
+        // Convert to Unix epoch (1970-01-01)
+        // Offset between 1601 and 1970 is 116_444_736_000_000_000 (100ns intervals)
+        let unix_100ns = if current_filetime_100ns >= 116_444_736_000_000_000u64 {
+            current_filetime_100ns - 116_444_736_000_000_000u64
+        } else {
+            0
+        };
+        
+        // Convert 100ns intervals to nanoseconds
+        let nanos = (unix_100ns as i64).saturating_mul(100);
+        
+        // Apply overlay correction to the SafeClock timestamp
+        let overlay_nanos = overlay.underlying_to_overlay_ns(nanos);
+        
+        SafeTimestamp { nanos: overlay_nanos, estimated: false }
     }
 }
 
@@ -172,5 +243,133 @@ impl AsyncClient {
             handle.await?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_clock_overlay_decode_valid() {
+        let mut buf = vec![0u8; 40];
+        buf[0] = b'V';
+        buf[1] = b'C';
+        buf[2..4].copy_from_slice(&PROTOCOL_MAJOR_VERSION.to_ne_bytes());
+        buf[6..8].copy_from_slice(&1u16.to_ne_bytes()); // flags = 1 (valid)
+        buf[8..16].copy_from_slice(&42i64.to_ne_bytes());
+        buf[16..24].copy_from_slice(&1000i64.to_ne_bytes());
+        buf[24..32].copy_from_slice(&500i64.to_ne_bytes());
+        buf[32..40].copy_from_slice(&1.5f64.to_ne_bytes());
+
+        let overlay = ClockOverlay::decode(&buf).unwrap();
+        assert_eq!(overlay.clock_id, 42);
+        assert_eq!(overlay.last_sync, 1000);
+        assert_eq!(overlay.shift, 500);
+        assert_eq!(overlay.freq_scale, 1.5);
+    }
+
+    #[test]
+    fn test_clock_overlay_decode_packet_too_short() {
+        let buf = vec![0u8; 30];
+        assert!(ClockOverlay::decode(&buf).is_err());
+    }
+
+    #[test]
+    fn test_clock_overlay_decode_invalid_magic() {
+        let mut buf = vec![0u8; 40];
+        buf[0] = b'X';
+        buf[1] = b'Y';
+        assert!(matches!(
+            ClockOverlay::decode(&buf),
+            Err(OverlayReceiveError::UnexpectedData)
+        ));
+    }
+
+    #[test]
+    fn test_clock_overlay_decode_unsupported_version() {
+        let mut buf = vec![0u8; 40];
+        buf[0] = b'V';
+        buf[1] = b'C';
+        buf[2..4].copy_from_slice(&99u16.to_ne_bytes());
+        assert!(matches!(
+            ClockOverlay::decode(&buf),
+            Err(OverlayReceiveError::UnsupportedMajorVersion)
+        ));
+    }
+
+    #[test]
+    fn test_clock_overlay_decode_invalid_flags() {
+        let mut buf = vec![0u8; 40];
+        buf[0] = b'V';
+        buf[1] = b'C';
+        buf[2..4].copy_from_slice(&PROTOCOL_MAJOR_VERSION.to_ne_bytes());
+        buf[6..8].copy_from_slice(&0u16.to_ne_bytes()); // flags = 0 (invalid)
+        assert!(matches!(
+            ClockOverlay::decode(&buf),
+            Err(OverlayReceiveError::InvalidFlags)
+        ));
+    }
+
+    #[test]
+    fn test_safeclock_is_monotonic() {
+        let mut clock = SafeClock::new(0.0, 0);
+        let overlay = system_time_overlay();
+        
+        let t1 = clock.now(&overlay);
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        let t2 = clock.now(&overlay);
+        
+        assert!(t2.nanos > t1.nanos, "clock should be monotonic: t1={} t2={}", t1.nanos, t2.nanos);
+    }
+
+    #[test]
+    fn test_safeclock_resolution_reasonable() {
+        let mut clock = SafeClock::new(0.0, 0);
+        let overlay = system_time_overlay();
+        
+        let t1 = clock.now(&overlay);
+        let t2 = clock.now(&overlay);
+        
+        // Two consecutive reads should differ by less than 1 second (reasonable)
+        let delta = (t2.nanos - t1.nanos).abs();
+        assert!(delta < 1_000_000_000, "clock resolution unreasonable: delta={} ns", delta);
+    }
+
+    #[test]
+    fn test_clock_overlay_underlying_to_overlay_no_correction() {
+        let overlay = ClockOverlay {
+            clock_id: 1,
+            last_sync: 1000,
+            shift: 0,
+            freq_scale: 0.0,
+        };
+        let underlying = 2000i64;
+        let result = overlay.underlying_to_overlay_ns(underlying);
+        // With shift=0 and freq_scale=0.0, result should be underlying (no correction)
+        assert_eq!(result, underlying);
+    }
+
+    #[test]
+    fn test_clock_overlay_underlying_to_overlay_with_shift() {
+        let overlay = ClockOverlay {
+            clock_id: 1,
+            last_sync: 1000,
+            shift: 500,
+            freq_scale: 0.0,
+        };
+        let underlying = 2000i64;
+        let result = overlay.underlying_to_overlay_ns(underlying);
+        // Result should be underlying + shift
+        assert_eq!(result, underlying + 500);
+    }
+
+    #[test]
+    fn test_system_time_overlay() {
+        let overlay = system_time_overlay();
+        assert_eq!(overlay.clock_id, 0);
+        assert_eq!(overlay.shift, 0);
+        assert_eq!(overlay.freq_scale, 0.0);
+        assert!(overlay.last_sync > 0);
     }
 }

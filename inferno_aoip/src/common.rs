@@ -1,4 +1,4 @@
-pub use log::{debug, error, info, trace, warn};
+pub use tracing::{debug, error, info, trace, warn};
 pub type Sample = i32;
 pub type USample = u32;
 

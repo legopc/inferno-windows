@@ -18,9 +18,11 @@ use super::tx_multicasts::MEDIA_PORT;
 use crate::device_server::TransferNotifier;
 use crate::media_clock::async_clock_receiver_to_realtime;
 use crate::ring_buffer::{ProxyToSamplesBuffer, RBOutput};
+use crate::state_storage::{StateStorage, SavedTxFlows, SavedTxFlow};
 use crate::util::os::set_current_thread_realtime;
 use crate::util::real_time_box_channel::RealTimeBoxReceiver;
 use crate::util::thread::run_future_in_new_thread;
+use crate::utils::LogAndForget;
 use crate::{
   common::Sample,
   media_clock::{ClockOverlay, MediaClock},
@@ -42,7 +44,12 @@ pub const PROCESS_EVENTS_INTERVAL: Duration = Duration::from_millis(33);
 pub const MIN_SLEEP: Duration = Duration::from_millis(0); // to save CPU cycles, TODO: make it configurable via some "eco mode" flag
 
 // it's better to have the clock in the past than in the future - otherwise Dante devices receiving from us go mad and fart
-const CLOCK_OFFSET_NS: ClockDiff = -500_000;
+fn clock_offset_ns() -> i64 {
+  std::env::var("CLOCK_OFFSET_NS")
+    .ok()
+    .and_then(|s| s.parse().ok())
+    .unwrap_or(-500_000i64)
+}
 
 pub type SamplesRequestCallback = Box<dyn FnMut(Clock, usize, &mut [Sample]) + Send + 'static>;
 
@@ -212,6 +219,7 @@ impl<P: ProxyToSamplesBuffer> FlowsTransmitterInternal<P> {
     let sample_rate = self.sample_rate;
     let process_events_interval = (sample_rate / 30) as Clock;
     let mut dither_rng = SmallRng::from_rng(rand::thread_rng()).unwrap();
+    tracing::info!("Clock offset: {}ns (set CLOCK_OFFSET_NS to override)", clock_offset_ns());
 
     if let Some(rx) = &mut start_time_rx {
       match rx.await {
@@ -432,6 +440,7 @@ impl FlowInfo {
 
 pub struct FlowsTransmitter {
   self_info: Arc<DeviceInfo>,
+  state_storage: Arc<StateStorage>,
   flow_seq_id: AtomicU32,
   flows: BTreeMap<u32, FlowData>,
   ip_port_to_id: BTreeMap<SocketAddr, u32>,
@@ -466,7 +475,7 @@ impl FlowsTransmitter {
       send_latency_samples: latency.try_into().unwrap(), // TODO in ALSA plugin should be 0, the more the worse because aplay wants to fill the whole buffer
       max_lag_samples,
       timestamp_shift: (0 as ClockDiff).wrapping_sub_unsigned(latency.try_into().unwrap()),
-      clock_offset_samples: (CLOCK_OFFSET_NS as i64 * sample_rate as i64 / 1_000_000_000i64)
+      clock_offset_samples: (clock_offset_ns() * sample_rate as i64 / 1_000_000_000i64)
         .try_into()
         .unwrap(),
       current_timestamp,
@@ -476,6 +485,7 @@ impl FlowsTransmitter {
   }
   pub fn start<P: ProxyToSamplesBuffer + Send + Sync + 'static>(
     self_info: Arc<DeviceInfo>,
+    state_storage: Arc<StateStorage>,
     tx_latency_ns: usize,
     clock_recv: RealTimeBoxReceiver<Option<ClockOverlay>>,
     channels_outputs: Vec<RBOutput<Sample, P>>,
@@ -506,6 +516,7 @@ impl FlowsTransmitter {
       Self {
         commands_sender: tx,
         self_info: self_info.clone(),
+        state_storage,
         flow_seq_id: 0.into(),
         flows: BTreeMap::new(),
         ip_port_to_id: BTreeMap::new(),
@@ -610,6 +621,8 @@ impl FlowsTransmitter {
 
     self.flows_info[flow_index as usize] = Some(flow_info);
 
+    self.save_state().await;
+
     Ok((flow_index as usize, flow_handle))
   }
   pub fn activate_multicast_flow(&mut self, flow_index: u32) {
@@ -640,6 +653,7 @@ impl FlowsTransmitter {
   pub async fn remove_flow(&mut self, handle: FlowHandle) -> Result<usize, std::io::Error> {
     if let Some((id, _)) = self.get_flow(handle) {
       self.remove_flow_internal(id).await;
+      self.save_state().await;
       Ok(id as usize)
     } else {
       Err(std::io::Error::from(std::io::ErrorKind::NotFound))
@@ -649,6 +663,7 @@ impl FlowsTransmitter {
     if let Some(Some(info)) = self.flows_info.get(index as usize).as_ref() {
       if info.rx_flow_name.is_none() && info.rx_hostname.is_none() {
         self.remove_flow_internal(index).await;
+        self.save_state().await;
         Ok(())
       } else {
         error!("trying to remove non-multicast flow which can be only managed using a handle");
@@ -701,5 +716,61 @@ impl FlowsTransmitter {
   }
   pub fn get_flows_info(&self) -> &Vec<Option<FlowInfo>> {
     &self.flows_info
+  }
+
+  /// Save all unicast TX flows to persistent storage
+  pub async fn save_state(&self) {
+    let to_save = SavedTxFlows {
+      flows: self
+        .flows_info
+        .iter()
+        .enumerate()
+        .filter_map(|(flow_id, flow_info_opt)| {
+          flow_info_opt.as_ref().map(|flow_info| {
+            let multicast_addr = if flow_info.is_multicast() {
+              None // multicast flows are saved separately
+            } else {
+              Some(flow_info.dst_addr.to_string())
+            };
+            SavedTxFlow {
+              flow_id: flow_id as u32 + 1,
+              channel_indices: flow_info.local_channel_indices.clone(),
+              multicast_addr,
+              multicast_port: flow_info.dst_port,
+            }
+          })
+        })
+        .filter(|f| !f.channel_indices.is_empty() && f.multicast_addr.is_some())
+        .collect_vec(),
+    };
+    self.state_storage.save("tx_flows", &to_save).log_and_forget();
+  }
+
+  /// Load saved unicast TX flows and restore them
+  /// Note: multicast flows are handled separately by TransmitMulticasts
+  pub async fn load_state(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    let saved =
+      self.state_storage.load::<SavedTxFlows>("tx_flows").unwrap_or(SavedTxFlows { flows: vec![] });
+    
+    for saved_flow in saved.flows {
+      if saved_flow.flow_id == 0 || saved_flow.channel_indices.is_empty() {
+        continue;
+      }
+      if let Some(addr_str) = &saved_flow.multicast_addr {
+        if let Ok(dst_addr) = addr_str.parse::<Ipv4Addr>() {
+          let flow_info = FlowInfo {
+            rx_hostname: Some("restored".to_owned()),
+            rx_flow_name: None,
+            dst_addr,
+            dst_port: saved_flow.multicast_port,
+            local_channel_indices: saved_flow.channel_indices,
+          };
+          if let Err(e) = self.add_flow(flow_info, FPP_MAX_ADVERTISED as usize, 3, None, false).await {
+            tracing::warn!("failed to restore tx flow {}: {e}", saved_flow.flow_id);
+          }
+        }
+      }
+    }
+    Ok(())
   }
 }

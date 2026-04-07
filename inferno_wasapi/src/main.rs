@@ -13,15 +13,24 @@
 //! - The WASAPI thread runs event-driven (WaitForSingleObject) on its own OS
 //!   thread so it never blocks the tokio executor
 
+mod config;
+mod logging;
+mod metering;
+mod service;
+mod service_install;
+
+pub use config::Config;
+
 use std::collections::{BTreeMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use log::{info, warn};
 
 use inferno_aoip::device_server::{DeviceServer, Settings};
+use windows::Win32::System::Threading::{GetCurrentThread, SetThreadPriority, THREAD_PRIORITY_TIME_CRITICAL};
+use tracing::{info, warn};
 
 #[derive(Parser, Debug)]
 #[command(name = "inferno_wasapi", about = "Dante AoIP receiver/transmitter for Windows via WASAPI")]
@@ -70,6 +79,18 @@ struct Args {
     /// List WASAPI render devices available for TX loopback capture and exit.
     #[arg(long)]
     list_tx_devices: bool,
+
+    /// Run as a Windows Service
+    #[arg(long)]
+    service: bool,
+
+    /// Install as Windows Service (requires admin)
+    #[arg(long)]
+    install_service: bool,
+
+    /// Uninstall Windows Service (requires admin)
+    #[arg(long)]
+    uninstall_service: bool,
 }
 
 fn list_wasapi_devices() -> Result<()> {
@@ -147,9 +168,13 @@ fn wasapi_render_thread(
     audio_queue: Arc<Mutex<VecDeque<i32>>>,
     shutdown: Arc<AtomicBool>,
     ready_tx: std::sync::mpsc::SyncSender<Result<String, String>>,
+    config: Config,
 ) {
     use wasapi::*;
     let _ = initialize_mta();
+
+    // Set thread priority to time-critical for low-latency audio
+    unsafe { SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL).ok(); }
 
     let device = match open_wasapi_device(&device_filter, virtual_device) {
         Ok(d) => d,
@@ -174,7 +199,7 @@ fn wasapi_render_thread(
     // Prefer f32 at the requested sample rate. If the device doesn't support it
     // directly, fall back to whatever format the device natively uses.
     let preferred = WaveFormat::new(32, 32, &SampleType::Float, sample_rate as usize, channels, None);
-    let format = match audio_client.is_supported(&preferred, &ShareMode::Shared) {
+    let mut format = match audio_client.is_supported(&preferred, &ShareMode::Shared) {
         Ok(None) => {
             info!("WASAPI: device supports f32 {sample_rate}Hz {channels}ch directly");
             preferred
@@ -193,7 +218,7 @@ fn wasapi_render_thread(
 
     let blockalign = format.get_blockalign() as usize;
     let dev_channels = format.get_nchannels() as usize;
-    let dev_sample_rate = format.get_samplespersec();
+    let mut dev_sample_rate = format.get_samplespersec();
     let is_float = format.get_subformat().map(|s| matches!(s, SampleType::Float)).unwrap_or(true);
 
     let (def_period, _min_period) = match audio_client.get_periods() {
@@ -201,7 +226,41 @@ fn wasapi_render_thread(
         Err(e) => { ready_tx.send(Err(format!("get_periods: {e}"))).ok(); return; }
     };
 
-    if let Err(e) = audio_client.initialize_client(&format, def_period, &Direction::Render, &ShareMode::Shared, true) {
+    let share_mode = if config.wasapi_exclusive {
+        ShareMode::Exclusive
+    } else {
+        ShareMode::Shared
+    };
+    tracing::info!("WASAPI mode: {}", if config.wasapi_exclusive { "exclusive" } else { "shared" });
+
+    // Try to initialize with the selected format
+    let mut initialize_result = audio_client.initialize_client(&format, def_period, &Direction::Render, &share_mode, true);
+    
+    // If initialization fails with unsupported format and we have an alternative sample rate, try that
+    if initialize_result.is_err() && (sample_rate == 48000 || sample_rate == 44100) {
+        let fallback_rate = if sample_rate == 48000 { 44100 } else { 48000 };
+        warn!("Requested {sample_rate}Hz not supported, attempting fallback to {fallback_rate}Hz");
+        
+        let fallback_format = WaveFormat::new(32, 32, &SampleType::Float, fallback_rate as usize, channels, None);
+        match audio_client.is_supported(&fallback_format, &share_mode) {
+            Ok(None) | Ok(Some(_)) => {
+                let try_format = if let Ok(Some(nearest)) = audio_client.is_supported(&fallback_format, &share_mode) {
+                    nearest
+                } else {
+                    fallback_format
+                };
+                initialize_result = audio_client.initialize_client(&try_format, def_period, &Direction::Render, &share_mode, true);
+                if initialize_result.is_ok() {
+                    format = try_format;
+                    dev_sample_rate = format.get_samplespersec();
+                    info!("Fallback to {fallback_rate}Hz succeeded");
+                }
+            }
+            Err(_) => {}
+        }
+    }
+
+    if let Err(e) = initialize_result {
         ready_tx.send(Err(format!("initialize_client: {e}"))).ok(); return;
     }
 
@@ -244,7 +303,11 @@ fn wasapi_render_thread(
 
         let frames = match audio_client.get_available_space_in_frames() {
             Ok(n) if n > 0 => n as usize,
-            Ok(_) => continue,
+            Ok(_) => {
+                // Possible underrun: no space available but event fired
+                warn!("WASAPI render: buffer underrun (no space available)");
+                continue;
+            }
             Err(e) => { warn!("get_available_space_in_frames: {e}"); continue; }
         };
 
@@ -256,6 +319,10 @@ fn wasapi_render_thread(
         let bytes: Vec<u8> = {
             let mut q = audio_queue.lock().unwrap();
             samples_from_queue = q.len().min(needed);
+            // Detect underruns: if queue is empty but we need data, warn
+            if samples_from_queue == 0 && needed > 0 {
+                warn!("WASAPI render: writing silence due to empty queue (possible Dante stall)");
+            }
             let mut buf = Vec::with_capacity(needed * blockalign / dev_channels);
             if is_float {
                 // f32 LE: convert i32 (24-bit left-justified, ±2^31) to f32 [-1, 1]
@@ -319,6 +386,9 @@ fn wasapi_capture_thread(
     use wasapi::*;
     let _ = initialize_mta();
 
+    // Set thread priority to time-critical for low-latency audio
+    unsafe { SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL).ok(); }
+
     let device = match open_wasapi_device(&device_filter, false) {
         Ok(d) => d,
         Err(e) => { ready_tx.send(Err(e.to_string())).ok(); return; }
@@ -371,9 +441,11 @@ fn wasapi_capture_thread(
         if is_float { "float" } else { "int" });
     ready_tx.send(Ok(device_name)).ok();
 
+    let meter = metering::ChannelMeter::new(channels);
     let mut frames_captured_total: u64 = 0;
     let mut events_total: u64 = 0;
     let mut last_stats_log = std::time::Instant::now();
+    let mut last_meter_log = std::time::Instant::now();
 
     while !shutdown.load(Ordering::Relaxed) {
         match h_event.wait_for_event(200) {
@@ -398,10 +470,15 @@ fn wasapi_capture_thread(
 
             let buf_size = nbr_frames * blockalign;
             let mut data = vec![0u8; buf_size];
-            let (frames_read, _flags) = match capture_client.read_from_device(&mut data) {
+            let (frames_read, flags) = match capture_client.read_from_device(&mut data) {
                 Ok(r) => r,
                 Err(e) => { warn!("read_from_device: {e}"); break; }
             };
+
+            // Check for silent buffers (glitch detection)
+            if flags.silent {
+                warn!("WASAPI capture: silent buffer (glitch detected)");
+            }
 
             if frames_read == 0 {
                 break;
@@ -438,7 +515,20 @@ fn wasapi_capture_thread(
                 }
             }
 
+            // Update peak meters for each channel
+            for ch in 0..channels {
+                meter.update_i32(ch, &channel_data[ch]);
+            }
+
             tx_pusher.lock().unwrap().push_channels(&channel_data);
+        }
+
+        // Periodic metering log every 5 seconds
+        if last_meter_log.elapsed().as_secs() >= 5 {
+            let peaks = meter.get_peaks();
+            info!(peaks = ?peaks, "Audio peak levels (0-255 Dante scale)");
+            meter.decay();
+            last_meter_log = std::time::Instant::now();
         }
 
         if last_stats_log.elapsed().as_secs() >= 10 {
@@ -451,12 +541,83 @@ fn wasapi_capture_thread(
     info!("WASAPI loopback capture thread stopped");
 }
 
+/// Ensure firewall rules are set for Dante AoIP ports (UDP 4440, 4455, 5353, 8700, 8800)
+fn ensure_firewall_rules() {
+    let ports = [4440u16, 4455, 5353, 8700, 8800];
+    for port in ports {
+        let _ = std::process::Command::new("netsh")
+            .args(["advfirewall", "firewall", "add", "rule",
+                   &format!("name=InfernoAoIP-UDP-{port}"),
+                   "dir=in", "action=allow", "protocol=UDP",
+                   &format!("localport={port}")])
+            .output();
+    }
+    info!("Firewall rules ensured for Dante ports");
+}
+
+/// Install a panic hook that writes crash logs to disk
+fn install_panic_hook() {
+    std::panic::set_hook(Box::new(|info| {
+        let msg = info.to_string();
+        let bt = std::backtrace::Backtrace::capture();
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let log_dir = dirs::data_local_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("inferno_aoip")
+            .join("logs");
+        let _ = std::fs::create_dir_all(&log_dir);
+        let path = log_dir.join(format!("crash-{timestamp}.log"));
+        let content = format!("PANIC: {msg}\n\nBacktrace:\n{bt:?}\n");
+        let _ = std::fs::write(&path, &content);
+        eprintln!("Crash log written to: {}", path.display());
+    }));
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
-    let logenv = env_logger::Env::default().default_filter_or("info");
-    env_logger::init_from_env(logenv);
+    // Install panic hook before anything else
+    install_panic_hook();
+
+    // Initialize tracing
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::from_default_env()
+                .add_directive(tracing::Level::INFO.into())
+        )
+        .init();
+
+    // Ensure firewall rules are set up
+    ensure_firewall_rules();
 
     let args = Args::parse();
+
+    // Handle service install/uninstall
+    if args.install_service {
+        match service_install::install_service() {
+            Ok(()) => return Ok(()),
+            Err(e) => return Err(anyhow!("Failed to install service: {e}")),
+        }
+    }
+
+    if args.uninstall_service {
+        match service_install::uninstall_service() {
+            Ok(()) => return Ok(()),
+            Err(e) => return Err(anyhow!("Failed to uninstall service: {e}")),
+        }
+    }
+
+    // Run as Windows Service if requested
+    if args.service {
+        info!("Starting as Windows Service");
+        if let Err(e) = service::run_as_service() {
+            tracing::error!("Service dispatcher failed: {e}");
+            std::process::exit(1);
+        }
+        return Ok(());
+    }
 
     if args.list_devices {
         return list_wasapi_devices();
@@ -468,6 +629,11 @@ async fn main() -> Result<()> {
     }
 
     info!("Starting inferno_wasapi");
+
+    // Load persistent config
+    let config_file = Config::load();
+    info!("Config: device={} rate={}Hz channels={} latency={}ms",
+        config_file.device_name, config_file.sample_rate, config_file.channels, config_file.latency_ms);
 
     let device_name = args.name.unwrap_or_else(|| {
         hostname::get()
@@ -520,7 +686,7 @@ async fn main() -> Result<()> {
         }
 
         info!("Streaming WASAPI loopback → Dante. Press Ctrl+C to stop.");
-        tokio::signal::ctrl_c().await?;
+        tokio::signal::ctrl_c().await.ok();
         info!("Ctrl+C received, shutting down TX");
 
         shutdown.store(true, Ordering::Relaxed);
@@ -534,6 +700,7 @@ async fn main() -> Result<()> {
 
     let mut config: BTreeMap<String, String> = BTreeMap::new();
     config.insert("RX_CHANNELS".to_owned(), args.channels.to_string());
+    config.insert("TX_CHANNELS".to_owned(), "0".to_owned());
     config.insert("SAMPLE_RATE".to_owned(), args.sample_rate.to_string());
     config.insert("NAME".to_owned(), device_name.clone());
 
@@ -545,9 +712,10 @@ async fn main() -> Result<()> {
     info!("Sample rate: {} Hz", args.sample_rate);
 
     // Shared audio queue: Dante callback -> WASAPI render thread
-    // Capped at 2 seconds to prevent unbounded growth if WASAPI stalls
+    // Capped at 250ms to prevent unbounded growth if WASAPI stalls
+    // 250ms ring buffer — sufficient for Dante latency targets
     let audio_queue: Arc<Mutex<VecDeque<i32>>> =
-        Arc::new(Mutex::new(VecDeque::with_capacity(args.sample_rate as usize * args.channels * 2)));
+        Arc::new(Mutex::new(VecDeque::with_capacity(args.sample_rate as usize / 4 * args.channels)));
     let audio_queue_wasapi = audio_queue.clone();
     let audio_queue_dante = audio_queue.clone();
 
@@ -561,10 +729,11 @@ async fn main() -> Result<()> {
     let sample_rate = args.sample_rate;
     let device_filter = args.device.clone();
     let virtual_device = args.virtual_device;
+    let config_wasapi = config_file.clone();
     let wasapi_thread = std::thread::Builder::new()
         .name("wasapi-render".into())
         .spawn(move || {
-            wasapi_render_thread(device_filter, virtual_device, sample_rate, channels, audio_queue_wasapi, shutdown_wasapi, ready_tx);
+            wasapi_render_thread(device_filter, virtual_device, sample_rate, channels, audio_queue_wasapi, shutdown_wasapi, ready_tx, config_wasapi);
         })?;
 
     // Wait for WASAPI thread to confirm it started
@@ -585,7 +754,7 @@ async fn main() -> Result<()> {
     info!("Dante device server started — device should appear in Dante Controller");
 
     let channels_cb = args.channels;
-    let max_queue = args.sample_rate as usize * args.channels * 2; // 2-second cap
+    let max_queue = args.sample_rate as usize / 4 * args.channels; // 250ms buffer — sufficient for Dante latency targets
 
     // receive_with_callback: inferno_aoip calls this ~every 50ms with decoded samples.
     // No timestamp management needed — inferno_aoip handles ring-buffer alignment.
@@ -605,7 +774,7 @@ async fn main() -> Result<()> {
 
     info!("Streaming Dante -> WASAPI. Press Ctrl+C to stop.");
 
-    tokio::signal::ctrl_c().await?;
+    tokio::signal::ctrl_c().await.ok();
     info!("Ctrl+C received, shutting down");
 
     shutdown.store(true, Ordering::Relaxed);

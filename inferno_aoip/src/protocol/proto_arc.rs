@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use binary_serde::BinarySerde;
 use bytebuffer::ByteBuffer;
-use log::error;
+use tracing::error;
 
 use crate::{byte_utils::make_u16, device_info::DeviceInfo};
 

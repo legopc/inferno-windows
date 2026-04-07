@@ -10,7 +10,7 @@ use crate::{common::*, media_clock::MediaClock};
 use std::io::ErrorKind::WouldBlock;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicI32, AtomicUsize};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, OnceLock};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
@@ -21,6 +21,7 @@ use mio::net::UdpSocket;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::error::TryRecvError;
 use usrvclock::ClockOverlay;
+use tracing::{info, debug, error};
 
 pub const MAX_FLOWS: usize = 32;
 const WAKE_TOKEN: mio::Token = mio::Token(MAX_FLOWS);
@@ -32,6 +33,34 @@ const SILENCE_BURST_LEN: usize = 64;
 const SILENCE_SAMPLES: [Sample; SILENCE_BURST_LEN] = [0; SILENCE_BURST_LEN];
 
 //pub type PacketCallback = Box<dyn FnMut(SocketAddr, &[u8]) + Send + 'static>;
+
+static DEBUG_PACKETS: OnceLock<bool> = OnceLock::new();
+
+fn debug_packets() -> bool {
+  *DEBUG_PACKETS.get_or_init(|| std::env::var("DANTE_DEBUG_PACKETS").is_ok())
+}
+
+struct FlowStats {
+  packets_received: u64,
+  packets_expected: u64,
+  last_timestamp: u64,
+  jitter_accumulator: f64,
+  last_log_time: Instant,
+  missed_packets: u64,
+}
+
+impl FlowStats {
+  fn new(now: Instant) -> Self {
+    FlowStats {
+      packets_received: 0,
+      packets_expected: 0,
+      last_timestamp: 0,
+      jitter_accumulator: 0.0,
+      last_log_time: now,
+      missed_packets: 0,
+    }
+  }
+}
 
 struct Channel<P: ProxyToSamplesBuffer> {
   sinks: Vec<RBInput<Sample, P>>,
@@ -49,6 +78,7 @@ struct SocketData<P: ProxyToSamplesBuffer> {
   channels: Vec<Option<Channel<P>>>,
   empty_sinks_vecs: Vec<Vec<RBInput<Sample, P>>>,
   actual_latency_samples: Arc<AtomicI32>,
+  stats: FlowStats,
 }
 
 struct SilenceWriter<P: ProxyToSamplesBuffer> {
@@ -116,6 +146,74 @@ impl<P: ProxyToSamplesBuffer> FlowsReceiverInternal<P> {
 
           // TODO: optimize, fetching the hardware clock so often is suboptimal
           // fetch it every n packets or use timestamped_socket and kernel-level timestamps instead
+
+          // Debug packet dump
+          if debug_packets() {
+            let len = recv_size.min(128);
+            let hex: String = buf[..len].iter().map(|b| format!("{b:02x} ")).collect();
+            debug!(hex = %hex, len = recv_size, "RTP packet");
+          }
+
+          // Update packet stats
+          sd.stats.packets_received += 1;
+          if sd.stats.last_timestamp > 0 {
+            // Calculate expected packets from timestamp interval
+            let timestamp_diff = timestamp.wrapping_sub(sd.stats.last_timestamp as Clock);
+            let expected_interval = timestamp_diff / (sample_rate as Clock);
+            sd.stats.packets_expected += expected_interval as u64;
+            
+            // Detect missed packets: if RTP timestamp gap is >1.5× frame size
+            let frame_size = sample_rate / 1000; // 1ms frame in samples at given sample rate
+            if timestamp_diff as u64 > (frame_size as u64 * 3) / 2 {
+              let gap = timestamp_diff as u64;
+              let missed = (gap / frame_size as u64).saturating_sub(1);
+              sd.stats.missed_packets += missed;
+            }
+            
+            // Jitter calculation: difference between actual and expected interval
+            // For simplicity, accumulate jitter as absolute deviation
+            let actual_interval_us = 1_000_000u64 / (sample_rate as u64);
+            let expected_interval_us = expected_interval as u64 * 1_000_000 / (sample_rate as u64);
+            if expected_interval_us > 0 {
+              let jitter = (actual_interval_us as f64 - expected_interval_us as f64).abs();
+              sd.stats.jitter_accumulator += jitter;
+            }
+          } else {
+            sd.stats.packets_expected = 1;
+          }
+          sd.stats.last_timestamp = timestamp as u64;
+
+          // Log stats every 10 seconds
+          if sd.stats.last_log_time.elapsed().as_secs() >= 10 {
+            let loss_pct = if sd.stats.packets_expected > 0 {
+              100.0 * (1.0 - sd.stats.packets_received as f64 / sd.stats.packets_expected as f64)
+            } else {
+              0.0
+            };
+            let avg_jitter = if sd.stats.packets_received > 0 {
+              sd.stats.jitter_accumulator / sd.stats.packets_received as f64
+            } else {
+              0.0
+            };
+            
+            if sd.stats.missed_packets > 0 {
+              tracing::warn!(
+                missed = sd.stats.missed_packets,
+                loss_pct = loss_pct,
+                jitter_us = avg_jitter,
+                packets_received = sd.stats.packets_received,
+                "Flow stats — packet loss detected"
+              );
+            } else {
+              info!(
+                loss_pct = loss_pct,
+                jitter_us = avg_jitter,
+                packets_received = sd.stats.packets_received,
+                "Flow statistics"
+              );
+            }
+            sd.stats = FlowStats::new(Instant::now());
+          }
 
           // can be wrapping because used only for latency calculation
           if let Some(now) = clock.wrapping_now_in_timebase(sample_rate.into()) {
@@ -568,6 +666,7 @@ impl<P: ProxyToSamplesBuffer + Send + Sync + 'static> FlowsReceiver<P> {
           channels: (0..channels_count).map(|_| None).collect(),
           empty_sinks_vecs,
           actual_latency_samples: als,
+          stats: FlowStats::new(Instant::now()),
         },
       })
       .await

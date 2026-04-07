@@ -438,6 +438,7 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
     tx_channel_name: &str,
     tx_hostname: &str,
   ) {
+    info!("RX Subscription requested for local channel {} -> TX channel {} @ {}", local_channel_index, tx_channel_name, tx_hostname);
     if self.channels[local_channel_index].is_some() {
       self.unsubscribe(local_channel_index, false).await;
     }
@@ -451,7 +452,8 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
   }
 
   pub async fn resolve_subscriptions(&mut self) -> bool {
-    self.resolve_now = false;
+     info!("=== RX Subscriptions Resolution Started ===");
+     self.resolve_now = false;
     let self_ip = self.self_info.ip_address;
 
     #[derive(Debug)]
@@ -774,10 +776,11 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
       // Create flows for multicast receivers:
       // TODO make DC display warning when removing multicast flow from the transmitter
       for (bundle_full_name, advbundle) in &bundles {
+        debug!("Creating multicast RX flow for bundle {} at address {}", bundle_full_name, advbundle.media_addr);
         let socket = match mio::net::UdpSocket::bind(advbundle.media_addr) {
           Ok(socket) => socket,
           Err(e) => {
-            error!("failed to bind to socket {:?} for multicast media: {e:?}", advbundle.media_addr);
+            error!("CRITICAL: failed to bind to socket {:?} for multicast media RX flow - cannot receive on this address: {e:?}", advbundle.media_addr);
             continue;
           }
         };
@@ -786,7 +789,7 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
           _ => panic!("media multicast address is not ipv4"),
         };
         if let Err(e) = socket.join_multicast_v4(&mcast_ipv4, &self.self_info.ip_address) {
-          error!("failed to join multicast group {:?}: {e:?}", advbundle.media_addr.ip());
+          error!("CRITICAL: failed to join multicast group {:?} from {:?} for RX - network error, check address and permissions: {e:?}", advbundle.media_addr.ip(), self.self_info.ip_address);
           continue;
         };
         let flow_index = match flows_locked.iter().position(|o| o.is_none()) {
@@ -831,6 +834,7 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
             .collect_vec(),
         );
         let future = async move {
+          debug!("Adding multicast RX flow socket for bundle at {}", media_addr);
           flows_recv
             .add_socket(
               flow_index,
@@ -914,9 +918,12 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
 
           let future = async move {
             let (socket, port) = match create_mio_udp_socket(self_ip) {
-              Ok(v) => v,
+              Ok(v) => {
+                debug!("RX socket created successfully for flow index={} on port {}", flow_index, v.1);
+                v
+              },
               Err(e) => {
-                error!("flow receiver socket creation failed: {e:?}");
+                error!("CRITICAL: RX socket creation FAILED for flow {} requesting channels {:?} - binding to address {} failed: {e:?}", flow_index + 1, tx_channels, self_ip);
                 flows.lock().unwrap()[flow_index] = None;
                 return None;
               }
@@ -925,6 +932,7 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
             let fpp_mtu_limit = (MAX_PAYLOAD_BYTES
               / (tx_channels.len() * (first.bits_per_sample as usize) / 8))
               .min(u16::MAX as usize) as u16;
+            info!("Requesting RX flow {} from TX at {:?} for channels {:?} on port {}", flow_index + 1, first.addr, tx_channels, port);
             let handle = match control_client
               .request_flow(
                 &first.addr,
@@ -938,9 +946,12 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
               )
               .await
             {
-              Ok(v) => v,
+              Ok(v) => {
+                info!("RX flow {} request SUCCESS from {:?}", flow_index + 1, first.addr);
+                v
+              },
               Err(e) => {
-                error!("failed to request flow from {:?}: {e:?}", first.addr);
+                error!("CRITICAL: RX flow {} request FAILED from TX at {:?} for channels {:?} - flow may not be available or device rejected request: {e:?}", flow_index + 1, first.addr, tx_channels);
                 let mut subinfos = subscription_info.write().unwrap();
                 for update in updates {
                   for chi in update.local_channel_indices {
@@ -952,6 +963,7 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
               }
             };
             assert_eq!(first.bits_per_sample % 8, 0);
+            debug!("Adding socket to flows_recv for RX flow {} on port {}", flow_index + 1, port);
             flows_recv
               .add_socket(
                 flow_index,
@@ -967,6 +979,7 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
             let mut source = &mut flows_locked[flow_index].as_mut().unwrap().source;
             if let FlowSource::Unicast(uf) = &mut source {
               uf.handle = Some(handle);
+              debug!("RX flow {} successfully configured with handle", flow_index + 1);
             } else {
               error!("BUG: unexpected non-unicast flow when trying to assign handle");
             }
@@ -997,7 +1010,7 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
     tx0.send(resolved).await.log_and_forget();
     drop(tx0);
     while let Some(updates) = rx.recv().await {
-      trace!("got update from channel");
+      debug!("RX: got subscription update from flow creation channel");
       let mut changed_channels = vec![];
       // used only for ringbuffer positions so can be wrapping
       let now =
@@ -1012,9 +1025,11 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
       for upd in updates {
         let first_index = upd.local_channel_indices[0];
         info!(
-          "subscription successful, waiting for media: channel {} and {} aliases",
+          "RX subscription CONNECTED: waiting for media on channel {} + {} aliases, flow index={}, channel in flow={}",
           self.self_info.rx_channels[first_index].friendly_name.read().unwrap(),
-          upd.local_channel_indices.len() - 1
+          upd.local_channel_indices.len() - 1,
+          upd.remote.local_flow_index,
+          upd.remote.channel_in_flow
         );
         debug!("{upd:?}");
         let mut flows = self.flows.lock().unwrap();
@@ -1065,9 +1080,9 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
         }
       }
       self.notify_channels_change(changed_channels).await;
-      trace!("recv iter");
+      debug!("RX: subscription update processed");
     }
-    trace!("recv loop exited");
+    info!("=== RX Subscriptions Resolution Completed ===");
     return true;
   }
 

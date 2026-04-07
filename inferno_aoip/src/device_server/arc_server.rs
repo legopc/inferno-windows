@@ -55,8 +55,11 @@ pub async fn run_server(
       subscriber = channels_sub_rx.borrow_and_update().clone();
     }
 
-    if request.opcode2().read() == 0 {
-      match request.opcode1().read() {
+    let opcode1 = request.opcode1().read();
+    let opcode2 = request.opcode2().read();
+    info!("ARC request: opcode1={:#06x}, opcode2={:#06x}", opcode1, opcode2);
+    if opcode2 == 0 {
+      match opcode1 {
 
         channels_and_flows_count::OPCODE => {
           let total_channels_wtf = self_info.tx_channels.len() + self_info.rx_channels.len(); // ??? not actually total number of channels but in some devices it is

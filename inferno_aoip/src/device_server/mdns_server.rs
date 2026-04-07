@@ -6,6 +6,7 @@ use searchfire::{
 use std::{
   collections::BTreeMap, net::{IpAddr, Ipv4Addr}, sync::{Arc, RwLock}
 };
+use log::info;
 
 use super::flows_tx::{FPP_MAX_ADVERTISED, FPP_MIN, MAX_CHANNELS_IN_FLOW};
 use crate::{device_info::DeviceInfo, mdns_client::{self_origin_from_self_info, MdnsClient, PointerToMulticast}, utils::LogAndForget};
@@ -44,7 +45,7 @@ impl DeviceMDNSResponder {
         ServiceBuilder::new(service_type("_netaudio-arc"), hostname.clone(), self_info.arc_port)
           .unwrap()
           .add_ip_address(IpAddr::V4(self_info.ip_address))
-          .add_txt_truncated("arcp_vers=2.7.41")
+          .add_txt_truncated("arcp_vers=2.2.0")
           .add_txt_truncated("arcp_min=0.2.4")
           .add_txt_truncated("router_vers=4.0.2")
           .add_txt_truncated(kv("router_info", &self_info.board_name))
@@ -60,10 +61,10 @@ impl DeviceMDNSResponder {
           .add_ip_address(IpAddr::V4(self_info.ip_address))
           .add_txt_truncated(kv("id", &hex::encode(self_info.factory_device_id)))
           .add_txt_truncated(kv("process", self_info.process_id))
-          .add_txt_truncated("cmcp_vers=1.2.0")
+          .add_txt_truncated("cmcp_vers=1.0.0")
           .add_txt_truncated("cmcp_min=1.0.0")
           .add_txt_truncated("server_vers=4.0.2")
-          .add_txt_truncated("channels=0x6000004d") // ???
+          .add_txt_truncated(format!("channels=0x{:08x}", 0x60000000u32 | (self_info.tx_channels.len() as u32 & 0xFF)))
           .add_txt_truncated(kv("mf", &self_info.manufacturer))
           .add_txt_truncated(kv("model", &self_info.model_number))
           .add_txt_truncated("") // really needed?
@@ -73,6 +74,9 @@ impl DeviceMDNSResponder {
       );
 
     let handle = bb.build(IpVersion::V4).unwrap().run_in_background();
+
+    info!("mDNS responder started: device {} on {}, arc_port={}, cmc_port={}", 
+          self_info.friendly_hostname, self_info.ip_address, self_info.arc_port, self_info.cmc_port);
 
     Self {
       handle: RwLock::new(Some(handle)),
@@ -101,7 +105,7 @@ impl DeviceMDNSResponder {
         .add_txt_truncated(format!("pcm={} {:x}", self_info.bits_per_sample / 8, self_info.pcm_type))
         .add_txt_truncated(kv("enc", self_info.bits_per_sample))
         .add_txt_truncated(kv("en", self_info.bits_per_sample))
-        .add_txt_truncated(kv("latency_ns", self_info.latency_ns /* FIXME should be tx latency */))
+        .add_txt_truncated(kv("latency_ns", self_info.tx_latency_ns))
         .add_txt_truncated(format!("fpp={},{}", FPP_MAX_ADVERTISED, FPP_MIN))
         .add_txt_truncated(kv("nchan", MAX_CHANNELS_IN_FLOW.min(self_info.tx_channels.len() as u16)));
       if default {
@@ -124,7 +128,7 @@ impl DeviceMDNSResponder {
         }
       }
       None => {
-        log::error!("BUG: trying to add channel using BroadcasterHandle after it was shut down");
+        tracing::error!("BUG: trying to add channel using BroadcasterHandle after it was shut down");
       }
     };
   }
@@ -139,7 +143,7 @@ impl DeviceMDNSResponder {
           handle.remove_named_service(service_type("_netaudio-chan"), name).log_and_forget();
         }
         None => {
-          log::error!("BUG: trying to remove channel using BroadcasterHandle after it was shut down");
+          tracing::error!("BUG: trying to remove channel using BroadcasterHandle after it was shut down");
         }
       }
     };
@@ -163,7 +167,7 @@ impl DeviceMDNSResponder {
       .add_txt_truncated("txtvers=1")
       .add_txt_truncated(kv("id", bundle_id))
       .add_txt_truncated(kv("nchan", channels_per_flow))
-      .add_txt_truncated(kv("latency_ns", self_info.latency_ns /* FIXME should be tx latency */))
+      .add_txt_truncated(kv("latency_ns", self_info.tx_latency_ns))
       .add_txt_truncated(kv("fpp", fpp))
       .add_txt_truncated(kv("rate", self_info.sample_rate))
       .add_txt_truncated(kv("enc", self_info.bits_per_sample))
@@ -176,7 +180,7 @@ impl DeviceMDNSResponder {
         handle.add_service(service).log_and_forget();
       },
       None => {
-        log::error!("BUG: trying to add multicast bundle using BroadcasterHandle after it was shut down");
+        tracing::error!("BUG: trying to add multicast bundle using BroadcasterHandle after it was shut down");
       }
     }
   }
@@ -191,7 +195,7 @@ impl DeviceMDNSResponder {
         handle.remove_named_service(service_type("_netaudio-bund"), name).log_and_forget();
       },
       None => {
-        log::error!("BUG: trying to remove multicast bundle using BroadcasterHandle after it was shut down");
+        tracing::error!("BUG: trying to remove multicast bundle using BroadcasterHandle after it was shut down");
       }
     }
   }
@@ -208,7 +212,7 @@ impl DeviceMDNSResponder {
         handle.add_service(b.build().unwrap()).log_and_forget();
       },
       None => {
-        log::error!("BUG: trying to reserve multicast IP using BroadcasterHandle after it was shut down");
+        tracing::error!("BUG: trying to reserve multicast IP using BroadcasterHandle after it was shut down");
       }
     }
   }
@@ -219,7 +223,7 @@ impl DeviceMDNSResponder {
         handle.remove_named_service(in_addr_type(), multicast_ip_to_name(addr)).log_and_forget();
       },
       None => {
-        log::error!("BUG: trying to remove multicast IP reservation using BroadcasterHandle after it was shut down");
+        tracing::error!("BUG: trying to remove multicast IP reservation using BroadcasterHandle after it was shut down");
       }
     }
   }

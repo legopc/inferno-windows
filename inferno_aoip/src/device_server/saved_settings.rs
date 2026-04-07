@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use log::error;
+use tracing::error;
 use serde::{Deserialize, Serialize};
 
 use crate::{device_info::{self, DeviceInfo}, state_storage::StateStorage, utils::LogAndForget};

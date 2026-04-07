@@ -58,7 +58,12 @@ impl<'s> Multicaster<'s> {
       server,
       seqnum: 1,
       vendor: [32; 8],
-      firmware_version_bytes: [4, 1, 6, 2],
+      firmware_version_bytes: [
+        env!("CARGO_PKG_VERSION_MAJOR").parse::<u8>().unwrap(),
+        env!("CARGO_PKG_VERSION_MINOR").parse::<u8>().unwrap(),
+        H(patch_version),
+        L(patch_version),
+      ],
       product_version_bytes: [
         env!("CARGO_PKG_VERSION_MAJOR").parse::<u8>().unwrap(),
         env!("CARGO_PKG_VERSION_MINOR").parse::<u8>().unwrap(),
@@ -130,9 +135,9 @@ impl<'s> Multicaster<'s> {
     content[0x17] = 0;
 
     content[0xbb] = 0x1f; // if 0, device is flooded with info multicast requests around 1 per second
-                          /* content[0xbf] = 5;
-                          content[0xc3] = 3;
-                          content[0xc7] = 3; */
+    content[0xbf] = 5;
+    content[0xc3] = 3;
+    content[0xc7] = 3;
     write_str_to_buffer(&mut content, 12, 8, &self.self_info.board_name);
     write_str_to_buffer(&mut content, 0x38, 16, &self.self_info.board_name);
 
@@ -146,7 +151,7 @@ impl<'s> Multicaster<'s> {
     write_str_to_buffer(&mut content, 0x2c, 16, &self.self_info.manufacturer);
     write_str_to_buffer(&mut content, 0xac, 16, &self.self_info.model_name);
     // product version:
-    //content[0x12c..0x130].copy_from_slice(&self.product_version_bytes);
+    content[0x12c..0x130].copy_from_slice(&self.product_version_bytes);
 
     // firmware version:
     content[0x1c..0x20].copy_from_slice(&self.product_version_bytes);

@@ -4,7 +4,7 @@ use std::sync::RwLock;
 use std::{net::Ipv4Addr, sync::Arc};
 
 use itertools::Itertools;
-use log::{error, info, warn};
+use tracing::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 

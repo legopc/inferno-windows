@@ -1,4 +1,4 @@
-use log::{error, info};
+use tracing::{error, info};
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use tokio::{net::UdpSocket, select, sync::broadcast::Receiver};
