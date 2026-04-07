@@ -1,0 +1,23 @@
+[package]
+name = "inferno2pipe"
+version = "0.1.0"
+edition = "2021"
+description = "Pipe Dante/InfernoAoIP audio to stdout as raw PCM"
+
+[[bin]]
+name = "inferno2pipe"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+clap = { version = "4", features = ["derive"] }
+windows = { version = "0.52", features = [
+    "Win32_Media_Audio",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_Foundation",
+    "Win32_Media_KernelStreaming",
+] }
+windows-core = "0.52"

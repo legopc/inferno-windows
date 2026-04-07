@@ -621,6 +621,30 @@ pub async fn run_server(
           }
         }
 
+        0x0090 => {
+          // Device reboot request from DC
+          warn!("DC reboot request received — restarting InfernoAoIP process");
+          conn.respond_with_code(CODE_OK, &[]).await;
+          
+          // Schedule graceful restart after 1 second to allow response to be sent
+          tokio::spawn(async {
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            info!("Restarting process...");
+            // Re-exec ourselves
+            let exe = std::env::current_exe().unwrap();
+            let args: Vec<_> = std::env::args().skip(1).collect();
+            std::process::Command::new(exe).args(args).spawn().ok();
+            std::process::exit(0);
+          });
+        }
+
+        0x0077 => {
+          // DC sends this automatically on every reconnect — do NOT clear config or restart.
+          // Just acknowledge to prevent DC from hanging.
+          info!("Clear config 0x0077 (auto-sent by DC on device reconnect) — acknowledged");
+          conn.respond_with_code(CODE_OK, &[]).await;
+        }
+
         x => {
           error!("received unknown opcode1 {x:#04x}, content {}", hex::encode(request.content()));
           error!("whole packet: {:?}", hex::encode(request.into_storage()));

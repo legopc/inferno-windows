@@ -18,7 +18,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-appender = "0.2"
 tracing-log = "0.2"
 dirs = "5"
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "time"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "time", "net", "io-util"] }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 hostname = "0.3"
@@ -26,3 +26,7 @@ windows = { version = "0.52", features = ["Win32_System_Threading", "Win32_Found
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 windows-service = "0.8"
+prometheus = { version = "0.13", default-features = false }
+interprocess = { version = "2", features = ["tokio"] }
+serde_json = "1"
+tray-icon = "0.22"

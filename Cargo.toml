@@ -5,4 +5,5 @@ members = [
     "searchfire",
     "usrvclock",
     "inferno_wasapi",
+    "inferno2pipe",
 ]

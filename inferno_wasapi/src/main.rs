@@ -18,6 +18,10 @@ mod logging;
 mod metering;
 mod service;
 mod service_install;
+mod ipc;
+mod tray;
+mod metrics;
+mod network_health;
 
 pub use config::Config;
 
@@ -91,6 +95,10 @@ struct Args {
     /// Uninstall Windows Service (requires admin)
     #[arg(long)]
     uninstall_service: bool,
+
+    /// Run system tray icon
+    #[arg(long)]
+    tray: bool,
 }
 
 fn list_wasapi_devices() -> Result<()> {
@@ -630,6 +638,11 @@ async fn main() -> Result<()> {
 
     info!("Starting inferno_wasapi");
 
+    // Spawn system tray if requested
+    if args.tray {
+        std::thread::spawn(|| tray::run_tray());
+    }
+
     // Load persistent config
     let config_file = Config::load();
     info!("Config: device={} rate={}Hz channels={} latency={}ms",
@@ -684,6 +697,11 @@ async fn main() -> Result<()> {
             Ok(Err(e)) => return Err(anyhow!("WASAPI loopback init failed: {e}")),
             Err(_) => return Err(anyhow!("WASAPI capture thread died before signalling ready")),
         }
+
+        // Spawn monitoring tasks
+        let metrics = metrics::Metrics::new();
+        tokio::spawn(metrics::serve_metrics(metrics.clone()));
+        tokio::spawn(network_health::run_health_monitor());
 
         info!("Streaming WASAPI loopback → Dante. Press Ctrl+C to stop.");
         tokio::signal::ctrl_c().await.ok();
@@ -753,6 +771,13 @@ async fn main() -> Result<()> {
     let mut server = DeviceServer::start(settings).await;
     info!("Dante device server started — device should appear in Dante Controller");
 
+    // Spawn IPC server for tray communication
+    let ipc_start_time = std::time::Instant::now();
+    let ipc_rx_channels = args.channels as u32;
+    let ipc_tx_channels = 0u32;
+    let ipc_sample_rate = args.sample_rate;
+    tokio::spawn(ipc::start_ipc_server(ipc_start_time, ipc_tx_channels, ipc_rx_channels, ipc_sample_rate));
+
     let channels_cb = args.channels;
     let max_queue = args.sample_rate as usize / 4 * args.channels; // 250ms buffer — sufficient for Dante latency targets
 
@@ -771,6 +796,11 @@ async fn main() -> Result<()> {
             }
         }
     })).await;
+
+    // Spawn monitoring tasks
+    let metrics = metrics::Metrics::new();
+    tokio::spawn(metrics::serve_metrics(metrics.clone()));
+    tokio::spawn(network_health::run_health_monitor());
 
     info!("Streaming Dante -> WASAPI. Press Ctrl+C to stop.");
 
