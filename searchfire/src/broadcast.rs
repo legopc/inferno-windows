@@ -153,10 +153,50 @@ impl Broadcaster {
 			tokio::select! {
 				biased;
 				_ = Self::recv_loop(tx, &mut rx, &config) => (),
+				_ = Self::announce_loop(tx, &config) => (),
 				_ = shutdown_rx => (),
 			}
 		} else {
-			Self::recv_loop(tx, &mut rx, &config).await
+			tokio::select! {
+				_ = Self::recv_loop(tx, &mut rx, &config) => (),
+				_ = Self::announce_loop(tx, &config) => (),
+			}
+		}
+	}
+
+	/// Proactively announce all registered services on a timer (RFC 6762 §8.3).
+	/// Sends unsolicited multicast DNS responses at startup and every 30 seconds.
+	async fn announce_loop(tx: &AsyncMdnsSocket, config: &RwLock<BroadcasterConfig>) {
+		// Initial delay to let the socket fully initialise, then send 2 rapid
+		// announcements (standard practice) followed by periodic re-announcements.
+		let delays = [
+			std::time::Duration::from_millis(250),
+			std::time::Duration::from_millis(1000),
+		];
+		for delay in delays {
+			tokio::time::sleep(delay).await;
+			Self::send_all_services(tx, config).await;
+		}
+		// Periodic re-announce every 30 seconds so late-starting Dante Controllers
+		// can discover the device without sending a query.
+		let mut interval = tokio::time::interval(std::time::Duration::from_secs(30));
+		interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+		loop {
+			interval.tick().await;
+			Self::send_all_services(tx, config).await;
+		}
+	}
+
+	async fn send_all_services(tx: &AsyncMdnsSocket, config: &RwLock<BroadcasterConfig>) {
+		let mut send_buf = vec![0u8; 4096];
+		let services: Vec<_> = config.read().unwrap().services.iter().cloned().collect();
+		for service in services {
+			send_buf.clear();
+			if service.dns_response.emit(&mut BinEncoder::new(&mut send_buf)).is_ok() {
+				if let Err(err) = tx.send_multicast(&send_buf).await {
+					log::warn!("Failed to send proactive mDNS announcement: {err}");
+				}
+			}
 		}
 	}
 

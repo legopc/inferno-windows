@@ -87,7 +87,7 @@ impl<const N: usize> IntoServiceTxt for &'static [u8; N] {
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ServiceDnsResponse {
 	service: Service,
 	pub dns_response: DnsMessage,
