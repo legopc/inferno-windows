@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-release:
+    name: Build Release Binary
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build release
+        run: cargo build --release -p inferno_wasapi
+
+      - name: Create release archive
+        run: |
+          Compress-Archive -Path target/release/inferno_wasapi.exe -DestinationPath inferno-windows-${{ github.ref_name }}.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: inferno-windows-${{ github.ref_name }}.zip
+          generate_release_notes: true
