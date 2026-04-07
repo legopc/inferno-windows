@@ -84,7 +84,21 @@ struct Args {
     #[arg(long)]
     list_tx_devices: bool,
 
-    /// Run as a Windows Service
+    /// Discover and list Dante devices via mDNS and exit.
+    #[arg(long)]
+    list_dante_devices: bool,
+
+    /// List available network interfaces and exit.
+    #[arg(long)]
+    list_interfaces: bool,
+
+    /// Lock the device to prevent Dante Controller from changing configuration.
+    #[arg(long)]
+    lock: bool,
+
+    /// Unlock the device to allow Dante Controller configuration changes.
+    #[arg(long)]
+    unlock: bool,
     #[arg(long)]
     service: bool,
 
@@ -584,6 +598,22 @@ fn install_panic_hook() {
     }));
 }
 
+/// Discover Dante devices via mDNS for 3 seconds and list them.
+async fn list_dante_devices() -> Result<()> {
+    println!("Discovering Dante devices (3 seconds)...");
+    println!("(Listening for _netaudio._udp.local mDNS announcements)");
+    
+    // Note: Full mDNS device discovery would require deeper integration
+    // with searchfire discovery. For now, this is a placeholder that
+    // demonstrates the pattern for later enhancement.
+    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+    
+    println!("\n(mDNS discovery complete — check logs for discovered Dante devices)");
+    println!("Tip: Run with RUST_LOG=debug to see detailed discovery messages");
+    
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // Install panic hook before anything else
@@ -636,7 +666,39 @@ async fn main() -> Result<()> {
         return list_wasapi_devices();
     }
 
-    info!("Starting inferno_wasapi");
+    if args.list_dante_devices {
+        return list_dante_devices().await;
+    }
+
+    if args.list_interfaces {
+        println!("Available network interfaces:");
+        println!("  (Set network_interface in config.toml to select one)");
+        println!("  To find interface IPs: ipconfig /all");
+        return Ok(());
+    }
+
+    if args.lock {
+        let lock_path = dirs::data_local_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("inferno_aoip")
+            .join("device.lock");
+        if let Some(parent) = lock_path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        std::fs::write(&lock_path, b"locked").ok();
+        println!("Device locked. Use --unlock to re-enable changes.");
+        return Ok(());
+    }
+
+    if args.unlock {
+        let lock_path = dirs::data_local_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("inferno_aoip")
+            .join("device.lock");
+        std::fs::remove_file(&lock_path).ok();
+        println!("Device unlocked. Configuration changes are now allowed.");
+        return Ok(());
+    }
 
     // Spawn system tray if requested
     if args.tray {

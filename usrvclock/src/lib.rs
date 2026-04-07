@@ -69,12 +69,9 @@ impl ClockOverlay {
         timestamp.wrapping_add(self.shift).wrapping_add(correction)
     }
 
-    /// Returns current underlying clock timestamp in nanoseconds (using SystemTime on Windows).
+    /// Returns current underlying clock timestamp in nanoseconds (using GetSystemTimePreciseAsFileTime on Windows).
     pub fn now_underlying_ns(&self) -> i64 {
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|d| d.as_nanos() as i64)
-            .unwrap_or(0)
+        get_precise_system_time_ns()
     }
 
     /// Returns current timestamp adjusted through the clock overlay.
@@ -186,11 +183,22 @@ impl SafeClock {
 /// On Windows, this is unused (no Unix domain socket support).
 pub const DEFAULT_SERVER_SOCKET_PATH: &str = r"\\.\pipe\ptp-usrvclock";
 
+/// Get precise system time in nanoseconds using GetSystemTimePreciseAsFileTime.
+/// Provides ~100ns resolution on modern Windows systems.
+fn get_precise_system_time_ns() -> i64 {
+    let ft = unsafe { GetSystemTimePreciseAsFileTime() };
+    let filetime = ((ft.dwHighDateTime as u64) << 32) | (ft.dwLowDateTime as u64);
+    // Convert FILETIME (100ns intervals since 1601-01-01) to ns since Unix epoch
+    let unix_100ns = if filetime >= 116_444_736_000_000_000u64 {
+        filetime - 116_444_736_000_000_000u64
+    } else {
+        0
+    };
+    (unix_100ns as i64).saturating_mul(100)
+}
+
 fn system_time_overlay() -> ClockOverlay {
-    let now_ns = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_nanos() as i64)
-        .unwrap_or(0);
+    let now_ns = get_precise_system_time_ns();
     // shift=0, freq_scale=0.0: pass system time through unchanged (no PTP correction)
     ClockOverlay { clock_id: 0, last_sync: now_ns, shift: 0, freq_scale: 0.0 }
 }

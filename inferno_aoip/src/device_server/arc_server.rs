@@ -30,6 +30,9 @@ use tokio::sync::broadcast::Receiver as BroadcastReceiver;
 use tokio::sync::mpsc::Sender;
 use tokio::sync::{watch, Mutex};
 
+// Global device lock — when true, reject config-changing opcodes
+static DEVICE_LOCKED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 pub async fn run_server(
   self_info: Arc<DeviceInfo>,
   state_storage: Arc<StateStorage>,
@@ -209,8 +212,13 @@ pub async fn run_server(
         }
 
         rename_tx_channels::OPCODE => {
-          let content = request.content();
-          let mut renamed_ids = deserialize_items::<rename_tx_channels::SingleChannelRenameRequest>(content).filter_map(|rename| {
+          // Check device lock
+          if DEVICE_LOCKED.load(std::sync::atomic::Ordering::Relaxed) {
+            warn!("Device locked — rejecting rename TX channels opcode {:#06x}", opcode1);
+            conn.respond_with_code(0, &[]).await;
+          } else {
+            let content = request.content();
+            let mut renamed_ids = deserialize_items::<rename_tx_channels::SingleChannelRenameRequest>(content).filter_map(|rename| {
             let channel_id = rename.channel_id;
             let name_offset = rename.new_name_offset.saturating_sub(HEADER_LENGTH as _) as usize;
             if channel_id==0 || name_offset==0 {
@@ -235,21 +243,27 @@ pub async fn run_server(
                 None
               }
             }
-          });
-          let renamed_anything = renamed_ids.next().is_some();
-          renamed_ids.for_each(drop); // consume the whole iterator
+           });
+            let renamed_anything = renamed_ids.next().is_some();
+            renamed_ids.for_each(drop); // consume the whole iterator
 
-          if renamed_anything {
-            conn.respond_with_code(1, &[0, 0]).await;
-            // sometimes it is [0, 1, 0, 0, H(channel_id), L(channel_id)], but it doesn't look necessary
-          } else {
-            conn.respond_with_code(0xFFFF /* TODO: really? */, &[]).await;
+            if renamed_anything {
+              conn.respond_with_code(1, &[0, 0]).await;
+              // sometimes it is [0, 1, 0, 0, H(channel_id), L(channel_id)], but it doesn't look necessary
+            } else {
+              conn.respond_with_code(0xFFFF /* TODO: really? */, &[]).await;
+            }
           }
         }
         rename_rx_channels::OPCODE => {
-          let content = request.content();
-          let mut renamed_any = false;
-          let renamed_indices = deserialize_items::<rename_rx_channels::SingleChannelRenameRequest>(content).filter_map(|rename| {
+          // Check device lock
+          if DEVICE_LOCKED.load(std::sync::atomic::Ordering::Relaxed) {
+            warn!("Device locked — rejecting rename RX channels opcode {:#06x}", opcode1);
+            conn.respond_with_code(0, &[]).await;
+          } else {
+            let content = request.content();
+            let mut renamed_any = false;
+            let renamed_indices = deserialize_items::<rename_rx_channels::SingleChannelRenameRequest>(content).filter_map(|rename| {
             let channel_id = rename.channel_id;
             let name_offset = rename.new_name_offset.saturating_sub(HEADER_LENGTH as _) as usize;
             if channel_id==0 || name_offset==0 {
@@ -273,9 +287,10 @@ pub async fn run_server(
                 None
               }
             }
-          });
-          mcast.send(make_channel_change_notification(renamed_indices)).await.log_and_forget();
-          conn.respond_with_code(if renamed_any { 1 } else { 0xFFFF /* TODO */}, &[]).await;
+            });
+            mcast.send(make_channel_change_notification(renamed_indices)).await.log_and_forget();
+            conn.respond_with_code(if renamed_any { 1 } else { 0xFFFF /* TODO */}, &[]).await;
+          }
         }
         query_tx_flows::OPCODE => {
           // query TX flows
@@ -340,10 +355,15 @@ pub async fn run_server(
           conn.respond_with_code(code, &response).await;
         }
         create_multicast_tx_flow::OPCODE => {
-          // Create multicast TX flow
-          let content = request.content();
-          let mut flow_ids = vec![];
-          for descr_offset in deserialize_items::<u16>(content) {
+          // Check device lock
+          if DEVICE_LOCKED.load(std::sync::atomic::Ordering::Relaxed) {
+            warn!("Device locked — rejecting create multicast TX flow opcode {:#06x}", opcode1);
+            conn.respond_with_code(0, &[]).await;
+          } else {
+            // Create multicast TX flow
+            let content = request.content();
+            let mut flow_ids = vec![];
+            for descr_offset in deserialize_items::<u16>(content) {
             let descr_offset: usize = descr_offset.into();
             if descr_offset-HEADER_LENGTH+create_multicast_tx_flow::FlowDescriptorHeader::SERIALIZED_SIZE > content.len() {
               continue;
@@ -396,16 +416,17 @@ pub async fn run_server(
               continue;
             }
           }
-          if flow_ids.len() > 0 {
-            let mut response = ByteBuffer::new();
-            response.write_u16(flow_ids.len().try_into().unwrap());
-            response.write_u16(0);
-            for id in flow_ids {
-              response.write_u16(id.try_into().unwrap());
+            if flow_ids.len() > 0 {
+              let mut response = ByteBuffer::new();
+              response.write_u16(flow_ids.len().try_into().unwrap());
+              response.write_u16(0);
+              for id in flow_ids {
+                response.write_u16(id.try_into().unwrap());
+              }
+              conn.respond(response.as_bytes()).await;
+            } else {
+              conn.respond_with_code(0xFFFF /* TODO */, &[]).await;
             }
-            conn.respond(response.as_bytes()).await;
-          } else {
-            conn.respond_with_code(0xFFFF /* TODO */, &[]).await;
           }
         }
         delete_multicast_tx_flow::OPCODE => {

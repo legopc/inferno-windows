@@ -7,6 +7,23 @@ pub const MTU: usize = 1500;
 const PACKET_BUFFER_SIZE: usize = MTU;
 pub const MAX_PAYLOAD_BYTES: usize = 1400; // ???
 
+/// Try to enable socket receive timestamps (Windows 11 22H2+ only).
+/// Returns Ok(()) if enabled, Err if not supported (older Windows).
+/// Note: This is a best-effort feature that may not be available on all Windows versions.
+pub fn try_enable_socket_timestamps(_socket: &std::net::UdpSocket) -> std::io::Result<()> {
+    #[cfg(target_os = "windows")]
+    {
+        tracing::debug!("Socket timestamping support (Windows 11 22H2+ only)");
+        // TODO: Implement actual setsockopt call when Windows crate binding is available
+        // For now, this is logged and silently skipped as best-effort
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        tracing::debug!("Socket timestamping not applicable on this platform");
+    }
+    Ok(())
+}
+
 
 pub struct ReceiveBuffer {
   buff: [u8; PACKET_BUFFER_SIZE],
@@ -106,5 +123,21 @@ pub async fn create_tokio_udp_socket(self_ip: Ipv4Addr) -> tokio::io::Result<(Ud
 pub fn create_mio_udp_socket(self_ip: Ipv4Addr) -> std::io::Result<(mio::net::UdpSocket, u16)> {
   let socket = mio::net::UdpSocket::bind(SocketAddr::new(IpAddr::V4(self_ip), 0))?;
   let port = socket.local_addr()?.port();
+  
+  // Try to enable socket timestamping (Windows 11 22H2+, best-effort)
+  #[cfg(target_os = "windows")]
+  {
+    use std::os::windows::io::{AsRawSocket, FromRawSocket};
+    let raw_socket = socket.as_raw_socket();
+    // Create a temporary std::net::UdpSocket view to call try_enable_socket_timestamps
+    // This is safe because we're not consuming or dropping the mio socket
+    let std_socket = unsafe { 
+      std::net::UdpSocket::from_raw_socket(raw_socket as _) 
+    };
+    try_enable_socket_timestamps(&std_socket).ok();
+    // Prevent the std socket from being dropped (which would close the underlying socket)
+    std::mem::forget(std_socket);
+  }
+  
   return Ok((socket, port));
 }

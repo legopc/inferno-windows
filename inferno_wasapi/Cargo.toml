@@ -3,6 +3,8 @@ name = "inferno_wasapi"
 version = "0.1.0"
 edition = "2021"
 description = "Dante AoIP receiver for Windows via WASAPI"
+authors = ["legopc"]
+license = "MIT"
 
 [[bin]]
 name = "inferno_wasapi"
