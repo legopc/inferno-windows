@@ -237,6 +237,6 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "Inferno AoIP",
         options,
-        Box::new(move |_cc| Ok(Box::new(InfernoApp::new(status, cmd)))),
+        Box::new(move |_cc| -> Box<dyn eframe::App> { Box::new(InfernoApp::new(status, cmd)) }),
     )
 }
