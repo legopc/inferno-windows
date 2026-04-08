@@ -127,7 +127,16 @@ Wave B (after Wave A — depend on ptp module):
 
 ## Sprint 8 — Code Quality & Stability Iteration
 
-*(Runs after all feature sprints complete. No new features — only hardening.)*
+**Goal**: No new features — only hardening. Logging, error handling, resilience, named constants across all crates.
+
+| Agent ID | Model | Task | Outcome |
+|---|---|---|---|
+| `s8-polish-aoip` | claude-haiku-4.5 (Fleet Worker) | inferno_aoip: remove 20+ unwraps, named constants, structured startup logging, mDNS retry logging | ✅ Committed `4c9b7b1` |
+| `s8-polish-wasapi` | claude-haiku-4.5 (Fleet Worker) | inferno_wasapi: named constants, tray .expect() removal, backtrace on service error, per-rule firewall logging | ✅ Committed `3c73daf` |
+| `s8-polish-gui` | claude-haiku-4.5 (Fleet Worker) | inferno_gui: IPC error logging, named timer/poll constants, notification catch_unwind, settings save error dialog | ✅ Committed `8cf64a1` |
+| `s8-polish-pipe` | claude-haiku-4.5 (Fleet Worker) | inferno2pipe: structured stats logging, device name in all errors, EVENT_WAIT_TIMEOUT_MS constant, MTA init non-fatal | ✅ Committed `3b44cad` |
+
+**Sprint 8 Outcome**: ✅ All 4 todos done. Build green. Tagged `v0.1.0`.
 
 ---
 
