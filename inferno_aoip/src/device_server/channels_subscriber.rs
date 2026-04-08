@@ -937,6 +937,13 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
               / (tx_channels.len() * (first.bits_per_sample as usize) / 8))
               .min(u16::MAX as usize) as u16;
             info!("Requesting RX flow {} from TX at {:?} for channels {:?} on port {}", flow_index + 1, first.addr, tx_channels, port);
+            // TODO: Wire config.fpp here to select FPP mode (auto/min/max/N)
+            // Current behavior: uses max FPP (highest latency, lowest overhead)
+            // When implemented, will parse fpp field and select accordingly:
+            // - "auto": negotiate with TX
+            // - "min": use FPP_MIN
+            // - "max": use FPP_MAX_ADVERTISED
+            // - numeric string: parse as u16 and use that value
             let handle = match control_client
               .request_flow(
                 &first.addr,

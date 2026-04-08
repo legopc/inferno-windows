@@ -17,6 +17,13 @@ pub struct Config {
     pub device_locked: bool,
     /// Network interface to bind to (empty string = auto-detect)
     pub network_interface: String,
+    /// Frames per packet: "auto", "min", "max", or a number (e.g. "48")
+    /// "auto" = let the protocol negotiate
+    /// "min" = minimum FPP (lowest latency, highest overhead)
+    /// "max" = maximum FPP (highest latency, lowest overhead)
+    /// Default: "auto"
+    #[serde(default = "Config::default_fpp")]
+    pub fpp: String,
 }
 
 impl Default for Config {
@@ -31,6 +38,7 @@ impl Default for Config {
             channel_names: vec![],
             device_locked: false,
             network_interface: String::new(),
+            fpp: "auto".to_string(),
         }
     }
 }
@@ -43,6 +51,8 @@ impl Config {
             .cloned()
             .unwrap_or_else(|| format!("Ch {}", idx + 1))
     }
+
+    fn default_fpp() -> String { "auto".to_string() }
 
     pub fn resolve_interface_ip(&self) -> Option<std::net::Ipv4Addr> {
         if self.network_interface.is_empty() {
@@ -150,6 +160,7 @@ mod tests {
         assert_eq!(loaded.sample_rate, 96000);
         assert_eq!(loaded.channels, 8);
         assert_eq!(loaded.latency_ms, 20);
+        assert_eq!(loaded.fpp, "auto");
     }
 
     #[test]
@@ -165,6 +176,7 @@ wasapi_exclusive = true
 channel_names = ["Left", "Right"]
 device_locked = true
 network_interface = "192.168.1.1"
+fpp = "max"
 "#;
         let cfg: Config = toml::from_str(toml).expect("parse");
         assert_eq!(cfg.device_name, "MyDevice");
@@ -176,6 +188,7 @@ network_interface = "192.168.1.1"
         assert_eq!(cfg.channel_names.len(), 2);
         assert!(cfg.device_locked);
         assert_eq!(cfg.network_interface, "192.168.1.1");
+        assert_eq!(cfg.fpp, "max");
     }
 
     #[test]

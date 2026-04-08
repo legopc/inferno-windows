@@ -833,8 +833,8 @@ async fn main() -> Result<()> {
 
     // Load persistent config
     let config_file = Config::load();
-    info!("Config: device={} rate={}Hz channels={} latency={}ms",
-        config_file.device_name, config_file.sample_rate, config_file.channels, config_file.latency_ms);
+    info!("Config: device={} rate={}Hz channels={} latency={}ms fpp={}",
+        config_file.device_name, config_file.sample_rate, config_file.channels, config_file.latency_ms, config_file.fpp);
 
     let device_name = args.name.unwrap_or_else(|| {
         hostname::get()
