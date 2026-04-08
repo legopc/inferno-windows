@@ -1,3 +1,10 @@
 /target/
 Cargo.lock
 *.log
+# Driver binaries and signing artifacts
+*.sys
+*.cat
+*.pdb
+inferno_driver/*.sys
+inferno_driver/*.cat
+inferno_driver/*.pdb

@@ -215,17 +215,203 @@ Test the RX binary:
 
 ---
 
-## Quick Reference — Common Commands
+## Step 13 — Test Signing and Driver Installation
+
+### Overview
+
+To load a kernel driver on Windows with test signing enabled, you need to:
+1. **Enable test signing** at the OS level (bcdedit)
+2. **Create a test signing certificate**
+3. **Build the driver** (inferno_driver.sys)
+4. **Sign the driver** with your test certificate
+5. **Install the driver** via Device Manager or devcon
+
+This section covers self-signed certificate generation and driver installation on a **test VM only**.
+
+---
+
+### Prerequisites
+
+- **Secure Boot disabled** in BIOS (see Step 1)
+- **Test signing enabled** (see Step 2)
+- **Visual Studio 2022** with **WDK extension** installed (see Steps 4–5)
+- **Windows Driver Kit (WDK)** tools available in PATH or via full path
+
+---
+
+### Step 13a — Create a Self-Signed Test Certificate
+
+Test certificates are stored in the current user's certificate store. We'll use PowerShell's built-in
+certificate cmdlets:
+
+```powershell
+# Create self-signed certificate for driver signing
+$cert = New-SelfSignedCertificate -CertStoreLocation "Cert:\CurrentUser\My" `
+    -Subject "CN=InfernoTestCert" `
+    -KeyUsage DigitalSignature `
+    -Type CodeSigningCert `
+    -FriendlyName "Inferno Test Certificate"
+
+Write-Host "Certificate created: $($cert.Thumbprint)"
+Write-Host "Subject: $($cert.Subject)"
+
+# Export certificate to PFX (for future re-import if needed)
+$pwd = ConvertTo-SecureString -String "TestPassword123" -Force -AsPlainText
+Export-PfxCertificate -Cert $cert -FilePath "$Home\Desktop\InfernoTestCert.pfx" -Password $pwd -Force
+
+# Export certificate to CER (for distribution/documentation)
+Export-Certificate -Cert $cert -FilePath "$Home\Desktop\InfernoTestCert.cer" -Type CERT -Force
+```
+
+The certificate is now in the **CurrentUser → My** store. It will be used by `signtool.exe` to sign the driver.
+
+---
+
+### Step 13b — Build the Driver
+
+#### Known Issue: MSBuild WDK Integration
+
+Direct MSBuild builds fail with:
+```
+error MSB4062: The "ValidateNTTargetVersion" task could not be loaded from the assembly
+C:\Program Files (x86)\Windows Kits\10\build\10.0.26100.0\bin\Microsoft.DriverKit.Build.Tasks.18.0.dll
+```
+
+This is a known WDK integration issue on some systems. **Workaround: Use Visual Studio IDE instead.**
+
+#### Build with Visual Studio IDE
+
+1. Open **Visual Studio 2022**
+2. **File → Open → Project/Solution**
+   - Navigate to: `C:\Users\copilot\source\repos\inferno-windows\inferno_driver\inferno_driver.vcxproj`
+3. Select configuration and platform:
+   - **Configuration:** Release (or Debug)
+   - **Platform:** x64
+4. **Build → Build Solution** (Ctrl+Shift+B)
+5. Wait for the build to complete
+6. Output binary location:
+   ```
+   inferno_driver\x64\Release\inferno_driver.sys
+   ```
+
+---
+
+### Step 13c — Sign the Driver
+
+Once you have `inferno_driver.sys`, sign it with your test certificate:
+
+```powershell
+# Path to signtool (from WDK)
+$wdk = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64"
+$signtool = "$wdk\signtool.exe"
+
+# Sign the driver with the test certificate
+& $signtool sign /fd SHA256 /a /s "My" /n "InfernoTestCert" `
+    "C:\Users\copilot\source\repos\inferno-windows\inferno_driver\x64\Release\inferno_driver.sys"
+```
+
+**Parameters:**
+- `/fd SHA256` — Use SHA-256 hash algorithm
+- `/a` — Auto-select the best certificate from the store
+- `/s "My"` — Look in the CurrentUser\My certificate store
+- `/n "InfernoTestCert"` — Certificate name to match
+
+On success, you will see:
+```
+SignTool verify: Number of files successfully signed: 1
+```
+
+---
+
+### Step 13d — Install the Driver via Device Manager
+
+Test-signed drivers can be installed using the **Add Legacy Hardware Wizard**:
+
+1. Open **Device Manager** (devmgmt.msc)
+2. **Action → Add legacy hardware**
+3. Select **"Install the hardware that I manually select from a list"**
+4. Choose a device category (e.g., **Sound, video and game controllers**)
+5. Click **"Have Disk…"** and browse to:
+   - `C:\Users\copilot\source\repos\inferno-windows\inferno_driver\`
+6. Select the `.inf` file (e.g., `ComponentizedAudioSample.inx` → compiled to `.inf`)
+7. Follow the prompts to install
+8. **Reboot** when prompted
+
+Alternatively, use **devcon.exe** from the command line (requires admin):
+```powershell
+$devcon = "C:\Program Files (x86)\Windows Kits\10\Tools\x64\devcon.exe"
+& $devcon install "inferno_driver.inf" "*"
+```
+
+---
+
+### Step 13e — Verify the Driver is Loaded
+
+After installation and reboot, verify the driver appears:
+
+```powershell
+# List all PnP devices with "Inferno" in the name
+Get-PnpDevice | Where-Object { $_.FriendlyName -like "*Inferno*" } | Select-Object FriendlyName, Status
+
+# Or check all sound/audio devices
+Get-PnpDevice -Class "Sound" | Select-Object FriendlyName, Status
+```
+
+Expected output (if successful):
+```
+FriendlyName              Status
+----------------          ------
+Inferno Virtual Audio D… OK
+```
+
+If the driver is not listed, check **Device Manager** for errors (yellow exclamation mark) or check the Event Viewer for kernel errors.
+
+---
+
+### Important: Binary Exclusions
+
+Driver binaries (`.sys`, `.cat`, `.pdb`) are excluded from version control. Check `.gitignore`:
+
+```
+# Driver binaries and signing artifacts
+*.sys
+*.cat
+*.pdb
+inferno_driver/*.sys
+inferno_driver/*.cat
+inferno_driver/*.pdb
+```
+
+Do **NOT** commit compiled drivers. Rebuild on each target system.
+
+---
+
+### Production Signing
+
+Test signing is **only for development and testing on your own VM**. For production drivers,
+you must:
+- Obtain an **Extended Validation (EV) Code Signing Certificate** from a Certificate Authority
+- Sign drivers with that certificate
+- Submit drivers to **Microsoft for WHQL certification** (for kernel drivers)
+
+See the **production signing documentation** (if available) for full details.
+
+---
+
+## Quick Reference — Test Signing Commands
 
 | Task | Command |
 |---|---|
-| List Dante RX audio devices | `.\target\release\inferno_wasapi.exe --list-devices` |
-| Run as Dante receiver (RX) | `.\target\release\inferno_wasapi.exe` |
-| List TX loopback sources | `.\target\release\inferno_wasapi.exe --list-tx-devices` |
-| Run as Dante transmitter (TX) | `.\target\release\inferno_wasapi.exe --tx` |
-| TX from named device | `.\target\release\inferno_wasapi.exe --tx --tx-device "SYSVAD"` |
-| Open firewall ports (admin) | `.\scripts\open-firewall-admin.ps1` |
-| Build release | `cargo build --release` |
+| Enable test signing (admin) | `bcdedit /set testsigning on` |
+| Reboot to apply | `Shutdown /r /t 0` |
+| Create test certificate | `$cert = New-SelfSignedCertificate -CertStoreLocation "Cert:\CurrentUser\My" -Subject "CN=InfernoTestCert" -KeyUsage DigitalSignature -Type CodeSigningCert` |
+| Build in VS (IDE) | Open VS → inferno_driver.vcxproj → Build Solution |
+| Sign driver (admin) | `signtool sign /fd SHA256 /a /s "My" /n "InfernoTestCert" inferno_driver.sys` |
+| Install via Device Manager | Action → Add legacy hardware → Have Disk → select .inf |
+| Verify driver loaded | `Get-PnpDevice \| Where-Object {$_.FriendlyName -like "*Inferno*"}` |
+| Disable test signing | `bcdedit /set testsigning off` (then reboot) |
+
+---
 
 ---
 
