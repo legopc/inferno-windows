@@ -99,8 +99,10 @@ impl MediaClock {
 }
 
 pub fn start_clock_receiver(path: Option<PathBuf>) -> ClockReceiver {
+  let socket_path = path.unwrap_or(usrvclock::DEFAULT_SERVER_SOCKET_PATH.into());
+  info!(clock_socket = ?socket_path, "connecting to clock receiver");
   ClockReceiver::start(
-    path.unwrap_or(usrvclock::DEFAULT_SERVER_SOCKET_PATH.into()),
+    socket_path,
     Box::new(|e| warn!("clock receive error: {e:?}")),
   )
 }
@@ -128,13 +130,18 @@ pub async fn make_shared_media_clock(
   // initial await makes e.g. Audacity freeze when starting when Statime is not running. TODO figure it out
   let media_clock = Arc::new(RwLock::new(media_clock));
   let media_clock1 = media_clock.clone();
+  // Explicit detach: spawned task continues updating clock overlay independently
   tokio::spawn(async move {
     loop {
       let overlay_opt = rx.borrow_and_update().clone();
       if let Some(overlay) = overlay_opt {
-        media_clock.write().unwrap().update_overlay(overlay);
+        match media_clock.write() {
+          Ok(mut mc) => mc.update_overlay(overlay),
+          Err(e) => error!("failed to acquire write lock on media_clock: {}", e),
+        }
       }
       if rx.changed().await.is_err() {
+        debug!("clock update task: channel closed, exiting");
         break;
       }
     }
@@ -147,6 +154,7 @@ pub fn async_clock_receiver_to_realtime(
   initial: Option<ClockOverlay>,
 ) -> RealTimeBoxReceiver<Option<ClockOverlay>> {
   let (rt_sender, rt_recv) = real_time_box_channel::channel(Box::new(initial));
+  // Explicit detach: spawned task bridges async clock receiver to real-time channel
   tokio::spawn(async move {
     loop {
       let overlay_opt = receiver.borrow_and_update().clone();
@@ -154,6 +162,7 @@ pub fn async_clock_receiver_to_realtime(
         rt_sender.send(Box::new(Some(overlay)));
       }
       if receiver.changed().await.is_err() {
+        debug!("realtime clock adapter task: channel closed, exiting");
         break;
       }
     }

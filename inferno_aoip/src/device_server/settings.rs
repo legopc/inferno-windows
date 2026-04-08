@@ -7,6 +7,7 @@ use std::{
 };
 
 use netdev::mac::MacAddr;
+use tracing::{debug, error, info};
 
 use crate::protocol::flows_control::PORT as FLOWS_CONTROL_PORT;
 use crate::protocol::mcast::INFO_REQUEST_PORT;
@@ -22,60 +23,112 @@ fn model_number() -> String {
     .unwrap_or_else(|| "_000000000000000b".to_owned())
 }
 
+// Named constants for configuration defaults
+const DEFAULT_BIND_IP_PARSE_ERR: &str = "BIND_IP: must contain IP address or network interface name";
+const DEFAULT_PROCESS_ID: u16 = 0;
+const DEFAULT_RX_LATENCY_NS: usize = 10_000_000;
+const DEFAULT_TX_LATENCY_NS: u32 = 10_000_000;
+const DEFAULT_SAMPLE_RATE: u32 = 48000;
+const HOSTNAME_MAX_LEN: usize = 31;
+const DEFAULT_USE_SAFE_CLOCK: bool = false;
+const MAX_SHORT_APPNAME_LEN: usize = 14;
+const MAX_APPNAME_FOR_HOSTNAME: usize = 22;
+
 fn create_self_info(
   app_name: &str,
   short_app_name: &str,
   my_ip: Option<Ipv4Addr>,
   settings: &BTreeMap<String, String>,
 ) -> DeviceInfo {
-  // TODO: change expect to non-fatal errors, with current approach an app using ALSA plugin may be crashed for a bening reason
+  // Configuration errors are logged but not fatal; we use sensible defaults
+  // This allows ALSA plugins and other embedded use cases to continue with degraded functionality
 
   let interfaces = netdev::get_interfaces();
   let my_ipv4 = my_ip
     .or_else(|| {
-      settings.get("BIND_IP").map(|ipstr| ipstr.parse().unwrap_or_else(|_| {
-        interfaces.iter().find(|iface| &iface.name == ipstr)
-          .expect("invalid setting BIND_IP, must contain IP address or network interface name")
-          .ipv4.get(0).expect("interface specified in BIND_IP has no IPv4 addresses")
-          .addr()
-      }))
+      settings.get("BIND_IP").and_then(|ipstr| {
+        match ipstr.parse::<Ipv4Addr>() {
+          Ok(ip) => Some(ip),
+          Err(_) => {
+            // Try to find interface by name
+            interfaces.iter().find(|iface| &iface.name == ipstr)
+              .and_then(|iface| iface.ipv4.get(0).map(|ipv4| ipv4.addr()))
+              .or_else(|| {
+                error!("BIND_IP setting invalid: '{}', must be IP address or interface name", ipstr);
+                None
+              })
+          }
+        }
+      })
     })
-    .unwrap_or_else(|| match local_ip_address::local_ip().expect("unknown local IP, cannot continue") {
-      IpAddr::V4(a) => a,
-      other => panic!("got local IP which is not IPv4: {other:?}"),
-    });
+    .or_else(|| {
+      match local_ip_address::local_ip() {
+        Ok(IpAddr::V4(a)) => {
+          info!(local_ip = %a, "using discovered local IPv4");
+          Some(a)
+        },
+        Ok(IpAddr::V6(_)) => {
+          error!("discovered local IP is IPv6, only IPv4 supported");
+          None
+        },
+        Err(e) => {
+          error!("failed to discover local IP: {}", e);
+          None
+        }
+      }
+    })
+    .unwrap_or_else(|| Ipv4Addr::LOCALHOST);
 
-  let process_id: u16 =
-    settings.get("PROCESS_ID").map(|s| s.parse().expect("PROCESS_ID must be u16")).unwrap_or(0);
+  let process_id: u16 = settings
+    .get("PROCESS_ID")
+    .and_then(|s| match s.parse::<u16>() {
+      Ok(id) => Some(id),
+      Err(e) => {
+        error!("PROCESS_ID parsing failed: '{}' - {}, using default {}", s, e, DEFAULT_PROCESS_ID);
+        None
+      }
+    })
+    .unwrap_or(DEFAULT_PROCESS_ID);
 
   let mut devid = [0u8; 8];
-  settings
-    .get("DEVICE_ID")
-    .map(|idstr| {
-      hex::decode_to_slice(idstr, &mut devid).expect("invalid DEVICE_ID, should contain hex data");
-    })
-    .unwrap_or_else(|| {
-      devid[2..6].copy_from_slice(&my_ipv4.octets());
-      devid[6..8].copy_from_slice(&process_id.to_be_bytes());
-    });
+  if let Some(idstr) = settings.get("DEVICE_ID") {
+    match hex::decode_to_slice(idstr, &mut devid) {
+      Ok(_) => debug!("using DEVICE_ID from config: {}", idstr),
+      Err(e) => {
+        error!("DEVICE_ID parsing failed: '{}' - {}, generating from IP", idstr, e);
+        devid[2..6].copy_from_slice(&my_ipv4.octets());
+        devid[6..8].copy_from_slice(&process_id.to_be_bytes());
+      }
+    }
+  } else {
+    devid[2..6].copy_from_slice(&my_ipv4.octets());
+    devid[6..8].copy_from_slice(&process_id.to_be_bytes());
+  }
 
   // TODO make hostname and sample rate configurable from DC
   let friendly_hostname = settings
     .get("NAME")
-    .map(|s| if s.len() > 31 { s[0..31].to_owned() } else { s.clone() })
+    .map(|s| if s.len() > HOSTNAME_MAX_LEN { s[0..HOSTNAME_MAX_LEN].to_owned() } else { s.clone() })
     .unwrap_or_else(|| {
+      let app_part = if app_name.len() > MAX_APPNAME_FOR_HOSTNAME { &app_name[0..MAX_APPNAME_FOR_HOSTNAME] } else { &app_name };
       format!(
         "{} {}",
-        if app_name.len() > 22 { &app_name[0..22] } else { &app_name },
+        app_part,
         hex::encode(&my_ipv4.octets())
       )
     });
-  let short_app_name = if short_app_name.len() > 14 { &short_app_name[0..14] } else { short_app_name };
+  let short_app_name = if short_app_name.len() > MAX_SHORT_APPNAME_LEN { &short_app_name[0..MAX_SHORT_APPNAME_LEN] } else { short_app_name };
 
   let sample_rate = settings
     .get("SAMPLE_RATE")
-    .map(|s| s.parse().expect("invalid SAMPLE_RATE, must be integer"))
-    .unwrap_or(48000);
+    .and_then(|s| match s.parse::<u32>() {
+      Ok(rate) => Some(rate),
+      Err(e) => {
+        error!("SAMPLE_RATE parsing failed: '{}' - {}, using default {}", s, e, DEFAULT_SAMPLE_RATE);
+        None
+      }
+    })
+    .unwrap_or(DEFAULT_SAMPLE_RATE);
 
   let mut netmask = Ipv4Addr::new(0, 0, 0, 0);
   let mut gateway = Ipv4Addr::new(0, 0, 0, 0);
@@ -111,20 +164,34 @@ fn create_self_info(
 
   let latency_ns = settings
     .get("RX_LATENCY_NS")
-    .map(|s| s.parse().expect("invalid RX_LATENCY_NS, must be integer"))
-    .unwrap_or(10_000_000);
+    .and_then(|s| match s.parse::<usize>() {
+      Ok(ns) => Some(ns),
+      Err(e) => {
+        error!("RX_LATENCY_NS parsing failed: '{}' - {}, using default {}", s, e, DEFAULT_RX_LATENCY_NS);
+        None
+      }
+    })
+    .unwrap_or(DEFAULT_RX_LATENCY_NS);
 
   let tx_latency_ns = settings
     .get("TX_LATENCY_NS")
-    .map(|s| s.parse().expect("invalid TX_LATENCY_NS, must be integer"))
-    .unwrap_or(10_000_000);
+    .and_then(|s| match s.parse::<u32>() {
+      Ok(ns) => Some(ns),
+      Err(e) => {
+        error!("TX_LATENCY_NS parsing failed: '{}' - {}, using default {}", s, e, DEFAULT_TX_LATENCY_NS);
+        None
+      }
+    })
+    .unwrap_or(DEFAULT_TX_LATENCY_NS);
+
+  let link_speed_clamped = speed.clamp(0, 10000) as u16;
 
   let mut result = DeviceInfo {
     ip_address: my_ipv4,
     netmask,
     gateway,
     mac_address,
-    link_speed: speed.clamp(0, 10000).try_into().unwrap(),
+    link_speed: link_speed_clamped,
     
     board_name: "Inferno-AoIP".to_owned(),
     manufacturer: "Inferno-AoIP".to_owned(),
@@ -149,12 +216,30 @@ fn create_self_info(
     info_request_port: INFO_REQUEST_PORT,
   };
 
-  if let Some(altport) = settings.get("ALT_PORT").map(|s| s.parse().expect("ALT_PORT must be u16")) {
-    result.arc_port = altport;
-    result.cmc_port = altport + 1;
-    result.flows_control_port = altport + 2;
-    result.info_request_port = altport + 3;
+  if let Some(altport_str) = settings.get("ALT_PORT") {
+    match altport_str.parse::<u16>() {
+      Ok(altport) => {
+        info!(alt_port = altport, "using alternate port base");
+        result.arc_port = altport;
+        result.cmc_port = altport + 1;
+        result.flows_control_port = altport + 2;
+        result.info_request_port = altport + 3;
+      },
+      Err(e) => {
+        error!("ALT_PORT parsing failed: '{}' - {}, using default ports", altport_str, e);
+      }
+    }
   }
+
+  info!(
+    ip = %result.ip_address,
+    device_id = %hex::encode(result.factory_device_id),
+    process_id = result.process_id,
+    friendly_hostname = %result.friendly_hostname,
+    sample_rate = result.sample_rate,
+    latency_ns = result.latency_ns,
+    "device configuration initialized"
+  );
 
   result
 }
@@ -195,16 +280,40 @@ impl Settings {
 
     let use_safe_clock = config
       .get("USE_SAFE_CLOCK")
-      .map(|s| s.parse().expect("invalid USE_SAFE_CLOCK, must be boolean"))
-      .unwrap_or(false);
+      .and_then(|s| match s.parse::<bool>() {
+        Ok(b) => Some(b),
+        Err(e) => {
+          error!("USE_SAFE_CLOCK parsing failed: '{}' - {}, using default {}", s, e, DEFAULT_USE_SAFE_CLOCK);
+          None
+        }
+      })
+      .unwrap_or(DEFAULT_USE_SAFE_CLOCK);
+
+    let tx_latency_ns = config
+      .get("TX_LATENCY_NS")
+      .and_then(|p| match p.parse::<u32>() {
+        Ok(ns) => Some(ns),
+        Err(e) => {
+          error!("TX_LATENCY_NS parsing failed: '{}' - {}, using default {}", p, e, DEFAULT_TX_LATENCY_NS);
+          None
+        }
+      })
+      .unwrap_or(DEFAULT_TX_LATENCY_NS);
+
+    let clock_path = config.get("CLOCK_PATH").and_then(|p| {
+      match std::str::FromStr::from_str(p) {
+        Ok(path) => Some(path),
+        Err(e) => {
+          error!("CLOCK_PATH parsing failed: '{}' - {}", p, e);
+          None
+        }
+      }
+    });
 
     let mut result = Self {
       self_info,
-      tx_latency_ns: config
-        .get("TX_LATENCY_NS")
-        .map(|p| p.parse().expect("invalid TX_LATENCY_NS, must be integer"))
-        .unwrap_or(10_000_000),
-      clock_path: config.get("CLOCK_PATH").map(|p| p.try_into().unwrap()),
+      tx_latency_ns,
+      clock_path,
       use_safe_clock,
       fpp_override: None,
       rx_buffer_samples: 524288,
@@ -212,12 +321,37 @@ impl Settings {
     };
 
     // the following should be harmless, as the application still has the chance to overwrite it
-    let rx_count =
-      config.get("RX_CHANNELS").map(|s| s.parse().expect("number of channels must be u16")).unwrap_or(2);
+    let rx_count = config
+      .get("RX_CHANNELS")
+      .and_then(|s| match s.parse::<u16>() {
+        Ok(count) => Some(count as usize),
+        Err(e) => {
+          error!("RX_CHANNELS parsing failed: '{}' - {}, using default 2", s, e);
+          None
+        }
+      })
+      .unwrap_or(2);
     result.make_rx_channels(rx_count);
-    let tx_count =
-      config.get("TX_CHANNELS").map(|s| s.parse().expect("number of channels must be u16")).unwrap_or(2);
+
+    let tx_count = config
+      .get("TX_CHANNELS")
+      .and_then(|s| match s.parse::<u16>() {
+        Ok(count) => Some(count as usize),
+        Err(e) => {
+          error!("TX_CHANNELS parsing failed: '{}' - {}, using default 2", s, e);
+          None
+        }
+      })
+      .unwrap_or(2);
     result.make_tx_channels(tx_count);
+
+    info!(
+      rx_channels = rx_count,
+      tx_channels = tx_count,
+      clock_path = ?result.clock_path,
+      use_safe_clock = result.use_safe_clock,
+      "settings initialized"
+    );
 
     result
   }
@@ -228,6 +362,7 @@ impl Settings {
         friendly_name: Arc::new(RwLock::new(format!("RX {id}"))),
       })
       .collect();
+    info!(channels = count, "RX channels configured");
   }
   pub fn make_tx_channels(&mut self, count: usize) {
     self.self_info.tx_channels = (1..=count)
@@ -236,5 +371,6 @@ impl Settings {
         friendly_name: Arc::new(RwLock::new(format!("TX {id}"))),
       })
       .collect();
+    info!(channels = count, "TX channels configured");
   }
 }

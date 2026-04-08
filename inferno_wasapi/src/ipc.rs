@@ -136,7 +136,9 @@ async fn handle_client(
             }
             StatusMessage::Shutdown => {
                 tracing::info!("IPC: shutdown requested by client");
-                shutdown_tx.send(true).ok();
+                if let Err(e) = shutdown_tx.send(true) {
+                    tracing::warn!("IPC: failed to signal shutdown: {}", e);
+                }
             }
             StatusMessage::ReloadConfig => {
                 tracing::info!("IPC: reload config requested");
@@ -198,6 +200,7 @@ pub async fn start_ipc_server(
         };
 
         let connected = std::mem::replace(&mut server, next_server);
+        // Detached task: handle IPC client communication (runs to completion independently)
         tokio::spawn(handle_client(
             connected,
             start_time,

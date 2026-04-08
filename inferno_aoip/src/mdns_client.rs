@@ -93,22 +93,28 @@ impl MdnsClient {
           _ => false,
         };
         if is_local {
-          let response_origin_fqdn = Name::from_labels(["_inferno-response-origin", "local"]).unwrap();
-          for rr in response.additionals() {
-            if rr.name() == &response_origin_fqdn {
-              if let Some(data) = rr.data() {
-                if let Some(txt) = data.as_txt() {
-                  if let Some(data) = txt.txt_data().get(0) {
-                    if data.eq_ignore_ascii_case(&self.self_origin) {
-                      debug!("got answer from self, ignoring this response");
-                      return false;
-                    } else {
-                      debug!("got local answer from other instance, considering");
-                      return true;
+          match Name::from_labels(["_inferno-response-origin", "local"]) {
+            Ok(response_origin_fqdn) => {
+              for rr in response.additionals() {
+                if rr.name() == &response_origin_fqdn {
+                  if let Some(data) = rr.data() {
+                    if let Some(txt) = data.as_txt() {
+                      if let Some(data) = txt.txt_data().get(0) {
+                        if data.eq_ignore_ascii_case(&self.self_origin) {
+                          debug!("got answer from self, ignoring this response");
+                          return false;
+                        } else {
+                          debug!("got local answer from other instance, considering");
+                          return true;
+                        }
+                      }
                     }
                   }
                 }
               }
+            },
+            Err(e) => {
+              error!("failed to create response origin FQDN: {}", e);
             }
           }
           true
@@ -134,16 +140,22 @@ impl MdnsClient {
         }
         Ok(true)
       }
-      Err(_e) => Ok(false), // TODO: sometimes error may be other than timeout, handle that
+      Err(e) => {
+        debug!("A record query failed for {:?}: {}", fqdn_parts, e);
+        Ok(false)
+      }
     }
   }
   pub async fn a_record_exists(&self, fqdn_parts: &[&str]) -> Result<bool, Box<dyn Error>> {
     debug!("checking if A record exists: {fqdn_parts:?}");
-    for _ in 0..3 {
+    for attempt in 0..3 {
       let r = self.a_record_exists_single_check(fqdn_parts, Duration::from_millis(400)).await?;
       if r {
         return Ok(r);
-      };
+      }
+      if attempt < 2 {
+        debug!("A record check attempt {} of 3 failed, retrying", attempt + 1);
+      }
     }
     Ok(false)
   }

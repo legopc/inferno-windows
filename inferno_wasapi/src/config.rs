@@ -2,6 +2,16 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use if_addrs;
 
+/// Configuration constants for validation and defaults
+pub mod consts {
+    pub const DEVICE_NAME_MAX_LEN: usize = 31;          // Dante 31-char limit
+    pub const MAX_CHANNELS: u32 = 64;                   // WASAPI/Dante max channels
+    pub const RX_BUFFER_SAMPLES_DEFAULT: u32 = 524_288; // ~10.9s at 48kHz
+    pub const LATENCY_REF_SAMPLES_DEFAULT: u32 = 4_800; // 100ms at 48kHz
+    pub const SUPPORTED_RATES: &[u32] = &[44_100, 48_000, 96_000];
+    pub const DEFAULT_SAMPLE_RATE: u32 = 48_000;
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub device_name: String,
@@ -66,9 +76,9 @@ impl Config {
 
     fn default_fpp() -> String { "auto".to_string() }
 
-    fn default_rx_buffer_samples() -> u32 { 524288u32 }
+    fn default_rx_buffer_samples() -> u32 { consts::RX_BUFFER_SAMPLES_DEFAULT }
 
-    fn default_latency_ref_samples() -> u32 { 4800u32 }
+    fn default_latency_ref_samples() -> u32 { consts::LATENCY_REF_SAMPLES_DEFAULT }
 
     pub fn resolve_interface_ip(&self) -> Option<std::net::Ipv4Addr> {
         if self.network_interface.is_empty() {
@@ -89,7 +99,7 @@ impl Config {
                 }
             }
         }
-        tracing::warn!("Network interface '{}' not found, using default", self.network_interface);
+        tracing::warn!(interface=%self.network_interface, "Network interface not found, using system default");
         None
     }
 
@@ -168,6 +178,15 @@ impl Config {
         }
 
         config.save(); // write defaults on first run
+        tracing::info!(
+            device=%config.device_name,
+            rate=%config.sample_rate,
+            channels=%config.channels,
+            fpp=%config.fpp,
+            wasapi_exclusive=%config.wasapi_exclusive,
+            rx_buffer_samples=%config.rx_buffer_samples,
+            "Configuration loaded and validated"
+        );
         config
     }
 

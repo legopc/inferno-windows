@@ -10,6 +10,12 @@ use serde::{Deserialize, Serialize};
 mod settings_window;
 mod wizard;
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+const IPC_PIPE_NAME: &str = r"\\.\pipe\inferno";
+const IPC_POLL_INTERVAL_SECS: u64 = 2;
+const IPC_TIMEOUT_SECS: u64 = 3;
+const TIMER_INTERVAL_MS: u64 = 100;
+
 // ── IPC types ────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -102,7 +108,7 @@ fn spawn_ipc_thread(status: SharedStatus, cmd: SharedCmd) {
         rt.block_on(async move {
             loop {
                 try_poll_once(&status, &cmd).await;
-                tokio::time::sleep(Duration::from_secs(2)).await;
+                tokio::time::sleep(Duration::from_secs(IPC_POLL_INTERVAL_SECS)).await;
             }
         });
     });
@@ -112,9 +118,10 @@ async fn try_poll_once(status: &SharedStatus, cmd: &SharedCmd) {
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
     use tokio::net::windows::named_pipe::ClientOptions;
 
-    let pipe = match ClientOptions::new().open(r"\\.\pipe\inferno") {
+    let pipe = match ClientOptions::new().open(IPC_PIPE_NAME) {
         Ok(p) => p,
-        Err(_) => {
+        Err(e) => {
+            eprintln!("[IPC] Connection failed to '{}': {}", IPC_PIPE_NAME, e);
             *status.lock().unwrap() = None;
             return;
         }
@@ -134,26 +141,33 @@ async fn try_poll_once(status: &SharedStatus, cmd: &SharedCmd) {
         let msg = serde_json::to_vec(&IpcMessage::ReloadConfig).unwrap_or_default();
         let _ = writer.write_all(&msg).await;
         let _ = writer.write_all(b"\n").await;
+        eprintln!("[IPC] Reload config request sent");
     }
     if do_shutdown {
         let msg = serde_json::to_vec(&IpcMessage::Shutdown).unwrap_or_default();
         let _ = writer.write_all(&msg).await;
         let _ = writer.write_all(b"\n").await;
+        eprintln!("[IPC] Shutdown request sent");
         return;
     }
 
     let msg = serde_json::to_vec(&IpcMessage::GetStatus).unwrap_or_default();
     if writer.write_all(&msg).await.is_err() {
+        eprintln!("[IPC] Failed to write GetStatus request");
         return;
     }
     if writer.write_all(b"\n").await.is_err() {
+        eprintln!("[IPC] Failed to write newline after GetStatus");
         return;
     }
 
     let mut line = String::new();
-    match tokio::time::timeout(Duration::from_secs(3), reader.read_line(&mut line)).await {
+    match tokio::time::timeout(Duration::from_secs(IPC_TIMEOUT_SECS), reader.read_line(&mut line)).await {
         Ok(Ok(_)) => {}
-        _ => return,
+        _ => {
+            eprintln!("[IPC] Status response timeout or read error");
+            return;
+        }
     }
 
     if let Ok(IpcMessage::Status {
@@ -172,7 +186,7 @@ async fn try_poll_once(status: &SharedStatus, cmd: &SharedCmd) {
         if writer.write_all(&msg).await.is_ok() && writer.write_all(b"\n").await.is_ok() {
             let mut flows_line = String::new();
             if let Ok(Ok(_)) = tokio::time::timeout(
-                Duration::from_secs(3),
+                Duration::from_secs(IPC_TIMEOUT_SECS),
                 reader.read_line(&mut flows_line),
             ).await {
                 if let Ok(IpcMessage::Flows { rx, tx }) = serde_json::from_str(&flows_line) {
@@ -221,10 +235,12 @@ fn db_to_percent(db: f32) -> u32 {
 
 // ── Windows Toast Notification Helper (using NWG tray icon balloons) ────────
 // Shows a balloon tooltip on the system tray (non-intrusive notifications)
+// Wrapped in catch_unwind for safety
 fn show_notification(window: &nwg::Window, title: &str, message: &str) {
-    // Use nwg's modal_info_message as a simple notification fallback
-    // A proper implementation would create a temporary tray icon or use Windows toast
-    nwg::modal_info_message(&window.handle, title, message);
+    // Use catch_unwind to prevent panics from crashing the app
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        nwg::modal_info_message(&window.handle, title, message);
+    }));
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -233,10 +249,12 @@ fn main() {
     // Check if config exists, if not run wizard
     let config_path = settings_window::get_config_path();
     if !config_path.exists() {
+        eprintln!("[Main] Config not found at {:?}, launching wizard", config_path);
         if let Err(e) = wizard::show_wizard() {
-            eprintln!("Wizard error: {}", e);
+            eprintln!("[Main] Wizard error: {}", e);
             return;
         }
+        eprintln!("[Main] Wizard completed, config created");
     }
 
     nwg::init().expect("Failed to init NWG");
@@ -425,7 +443,7 @@ fn main() {
     let mut timer: nwg::AnimationTimer = Default::default();
     nwg::AnimationTimer::builder()
         .parent(&window)
-        .interval(std::time::Duration::from_millis(100))
+        .interval(std::time::Duration::from_millis(TIMER_INTERVAL_MS))
         .build(&mut timer)
         .unwrap();
     timer.start();
@@ -499,7 +517,7 @@ fn main() {
                     let snapshot = shared_status.lock().unwrap().clone();
                     match snapshot {
                         None => {
-                            lbl_status.set_text("Status: Service not running");
+                            lbl_status.set_text("Status: Service offline");
                             lbl_rate.set_text("Sample Rate: \u{2014}");
                             lbl_channels.set_text("Channels: \u{2014}");
                             lbl_clock.set_text("Clock: \u{2014}");
@@ -570,18 +588,21 @@ fn main() {
                             
                             // Service start notification (once on first uptime > 0)
                             if !notif.notification_shown_start && s.uptime_secs > 0 {
+                                eprintln!("[Notifications] Service started");
                                 show_notification(&window, "Inferno Running", "Dante audio service is active in background");
                                 notif.notification_shown_start = true;
                             }
 
                             // First RX flow established (edge: rx_active false → true)
                             if !notif.prev_rx_active && s.rx_active {
+                                eprintln!("[Notifications] RX activated: {} ch @ {}Hz", s.rx_channels, s.sample_rate);
                                 let msg = format!("Receiving {} channels at {}Hz", s.rx_channels, s.sample_rate);
                                 show_notification(&window, "Inferno — RX Active", &msg);
                             }
 
                             // Audio glitch / flow lost (edge: rx_active true → false)
                             if notif.prev_rx_active && !s.rx_active {
+                                eprintln!("[Notifications] RX deactivated - audio lost");
                                 show_notification(&window, "Inferno — Audio Lost", "RX audio flow disconnected");
                             }
 
@@ -592,6 +613,7 @@ fn main() {
                                 if let Some(new_flow) = s.rx_flows.iter().find(|f| {
                                     f.state == "active" || f.state == "running"
                                 }) {
+                                    eprintln!("[Notifications] New flow detected: {} from {}", new_flow.name, new_flow.source_ip);
                                     let msg = format!("Flow: {} from {} ({} ch @ {}Hz)", 
                                         new_flow.name, new_flow.source_ip, new_flow.channels, new_flow.sample_rate);
                                     show_notification(&window, "Inferno — Flow Active", &msg);
@@ -607,8 +629,10 @@ fn main() {
                 }
                 E::OnButtonClick => {
                     if handle == btn_reload_handle {
+                        eprintln!("[Button] Reload config clicked");
                         shared_cmd.lock().unwrap().reload = true;
                     } else if handle == btn_shutdown_handle {
+                        eprintln!("[Button] Shutdown clicked");
                         shared_cmd.lock().unwrap().shutdown = true;
                     } else if handle == btn_view_logs_handle {
                         let log_path = format!(
@@ -616,7 +640,10 @@ fn main() {
                             std::env::var("LOCALAPPDATA").unwrap_or_default()
                         );
                         let content = std::fs::read_to_string(&log_path)
-                            .unwrap_or_else(|_| "Log file not found".to_string());
+                            .unwrap_or_else(|e| {
+                                eprintln!("[Logs] Failed to read logs from {}: {}", log_path, e);
+                                "Log file not found".to_string()
+                            });
                         let lines: Vec<&str> = content.lines().collect();
                         let tail: String = lines
                             .iter()
@@ -629,8 +656,10 @@ fn main() {
                         nwg::modal_info_message(&window_handle, "Inferno Logs", &tail);
                     } else if handle == btn_settings_handle {
                         // Open settings window (non-modal for now; could be made modal with modal_dialog)
+                        eprintln!("[Button] Settings clicked");
                         let result = show_settings_window(&window_handle, &shared_cmd);
                         if let Err(e) = result {
+                            eprintln!("[Settings] Failed to open: {}", e);
                             nwg::modal_error_message(&window_handle, "Settings Error", &format!("Failed to open settings: {}", e));
                         }
                     } else if handle == chk_autostart_handle {
@@ -641,12 +670,20 @@ fn main() {
                         let bat_path = format!("{}\\InfernoAoIP.bat", startup_dir);
                         if chk_autostart.check_state() == nwg::CheckBoxState::Checked {
                             let exe = std::env::current_exe().unwrap_or_default();
-                            let _ = std::fs::write(
+                            if let Err(e) = std::fs::write(
                                 &bat_path,
                                 format!("@echo off\nstart \"\" \"{}\"", exe.display()),
-                            );
+                            ) {
+                                eprintln!("[Autostart] Failed to write BAT file to {}: {}", bat_path, e);
+                            } else {
+                                eprintln!("[Autostart] Enabled");
+                            }
                         } else {
-                            let _ = std::fs::remove_file(&bat_path);
+                            if let Err(e) = std::fs::remove_file(&bat_path) {
+                                eprintln!("[Autostart] Failed to remove BAT file: {}", e);
+                            } else {
+                                eprintln!("[Autostart] Disabled");
+                            }
                         }
                     }
                 }
@@ -830,6 +867,7 @@ fn show_settings_window(parent_handle: &nwg::ControlHandle, shared_cmd: &SharedC
 
     // Load current config into window
     if let Err(e) = settings_window::load_config_into_window(&settings) {
+        eprintln!("[Settings] Failed to load config: {}", e);
         nwg::modal_error_message(parent_handle, "Settings", &format!("Failed to load config: {}", e));
     }
 
@@ -852,9 +890,11 @@ fn show_settings_window(parent_handle: &nwg::ControlHandle, shared_cmd: &SharedC
             match evt {
                 E::OnButtonClick => {
                     if handle == btn_save_handle {
+                        eprintln!("[Settings] Save clicked");
                         should_save_clone.set(true);
                         should_close_clone.set(true);
                     } else if handle == btn_cancel_handle {
+                        eprintln!("[Settings] Cancel clicked");
                         should_close_clone.set(true);
                     }
                 }
@@ -875,10 +915,12 @@ fn show_settings_window(parent_handle: &nwg::ControlHandle, shared_cmd: &SharedC
         let s = settings_rc.borrow();
         match settings_window::save_config_from_window(&s) {
             Ok(()) => {
+                eprintln!("[Settings] Config saved successfully, triggering reload");
                 shared_cmd.lock().unwrap().reload = true;
                 nwg::modal_info_message(parent_handle, "Settings", "Configuration saved. Reload triggered.");
             }
             Err(e) => {
+                eprintln!("[Settings] Failed to save config: {}", e);
                 nwg::modal_error_message(parent_handle, "Settings", &format!("Failed to save config: {}", e));
             }
         }

@@ -62,8 +62,16 @@ pub fn load_config_into_window(window: &SettingsWindow) -> Result<(), Box<dyn st
         return Err(format!("Config file not found at {:?}", path).into());
     }
 
-    let content = std::fs::read_to_string(&path)?;
-    let config: toml::Value = toml::from_str(&content)?;
+    let content = std::fs::read_to_string(&path)
+        .map_err(|e| {
+            eprintln!("[Settings] Failed to read config from {:?}: {}", path, e);
+            Box::new(e) as Box<dyn std::error::Error>
+        })?;
+    let config: toml::Value = toml::from_str(&content)
+        .map_err(|e| {
+            eprintln!("[Settings] Failed to parse config TOML: {}", e);
+            Box::new(e) as Box<dyn std::error::Error>
+        })?;
 
     // Device Name
     if let Some(device_name) = config.get("device_name").and_then(|v| v.as_str()) {
@@ -134,13 +142,25 @@ pub fn save_config_from_window(window: &SettingsWindow) -> Result<(), Box<dyn st
 
     // Ensure directory exists
     if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
+        std::fs::create_dir_all(parent)
+            .map_err(|e| {
+                eprintln!("[Settings] Failed to create config directory: {}", e);
+                Box::new(e) as Box<dyn std::error::Error>
+            })?;
     }
 
     // Load existing config or create new
     let mut config: toml::Value = if path.exists() {
-        let content = std::fs::read_to_string(&path)?;
-        toml::from_str(&content)?
+        let content = std::fs::read_to_string(&path)
+            .map_err(|e| {
+                eprintln!("[Settings] Failed to read existing config: {}", e);
+                Box::new(e) as Box<dyn std::error::Error>
+            })?;
+        toml::from_str(&content)
+            .map_err(|e| {
+                eprintln!("[Settings] Failed to parse existing config: {}", e);
+                Box::new(e) as Box<dyn std::error::Error>
+            })?
     } else {
         toml::Value::Table(toml::map::Map::new())
     };
@@ -195,7 +215,12 @@ pub fn save_config_from_window(window: &SettingsWindow) -> Result<(), Box<dyn st
     }
 
     let toml_str = toml::to_string_pretty(&config)?;
-    std::fs::write(&path, toml_str)?;
+    std::fs::write(&path, toml_str)
+        .map_err(|e| {
+            eprintln!("[Settings] Failed to write config to {:?}: {}", path, e);
+            Box::new(e) as Box<dyn std::error::Error>
+        })?;
 
+    eprintln!("[Settings] Config saved to {:?}", path);
     Ok(())
 }

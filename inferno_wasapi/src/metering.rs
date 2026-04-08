@@ -1,6 +1,11 @@
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
 
+const MAX_I32_FLOAT: f32 = 2_147_483_648.0;
+const DB_FLOOR: f32 = -90.0;
+const DB_RANGE: f32 = 90.0;
+const PEAK_SCALE_MAX: u8 = 255;
+
 pub struct ChannelMeter {
     peaks: Vec<AtomicU8>,
 }

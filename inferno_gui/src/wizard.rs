@@ -56,6 +56,8 @@ pub fn get_config_path() -> PathBuf {
 pub fn apply_firewall_rules() -> Result<String, String> {
     use std::process::Command;
 
+    eprintln!("[Wizard] Applying firewall rules...");
+
     // Rule 1: Dante RX ports (UDP 4440, 4455, 5353, 6000-6015)
     let rule1 = Command::new("netsh")
         .args(&[
@@ -88,9 +90,11 @@ pub fn apply_firewall_rules() -> Result<String, String> {
 
     match (rule1, rule2) {
         (Ok(out1), Ok(out2)) if out1.status.success() && out2.status.success() => {
+            eprintln!("[Wizard] Firewall rules applied successfully");
             Ok("Firewall rules applied successfully.".to_string())
         }
         _ => {
+            eprintln!("[Wizard] Failed to apply firewall rules (need admin rights)");
             Err("Firewall rules require admin rights — run as Administrator or add rules manually.".to_string())
         }
     }
@@ -101,7 +105,11 @@ pub fn write_config(nic: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     // Ensure directory exists
     if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
+        std::fs::create_dir_all(parent)
+            .map_err(|e| {
+                eprintln!("[Wizard] Failed to create config directory {:?}: {}", parent, e);
+                Box::new(e) as Box<dyn std::error::Error>
+            })?;
     }
 
     // Create minimal config
@@ -124,12 +132,18 @@ pub fn write_config(nic: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     let config_value = toml::Value::Table(config);
     let toml_str = toml::to_string_pretty(&config_value)?;
-    std::fs::write(&path, toml_str)?;
+    std::fs::write(&path, toml_str)
+        .map_err(|e| {
+            eprintln!("[Wizard] Failed to write config to {:?}: {}", path, e);
+            Box::new(e) as Box<dyn std::error::Error>
+        })?;
 
+    eprintln!("[Wizard] Config written to {:?}", path);
     Ok(())
 }
 
 pub fn show_wizard() -> Result<(), Box<dyn std::error::Error>> {
+    eprintln!("[Wizard] Starting first-run wizard");
     nwg::init()?;
     nwg::Font::set_global_family("Segoe UI")?;
 
@@ -297,11 +311,13 @@ pub fn show_wizard() -> Result<(), Box<dyn std::error::Error>> {
                             if let Some(sel) = combo_nic_rc.selection() {
                                 if let Some(nic_str) = combo_nic_rc.collection().get(sel) {
                                     let nic_name = nic_str.split(" (").next().unwrap_or("").to_string();
+                                    eprintln!("[Wizard] NIC selected: {}", nic_name);
                                     nic_clone.replace(Some(nic_name));
                                 }
                             }
                         }
                         step_clone.set(step + 1);
+                        eprintln!("[Wizard] Advanced to step {}", step + 1);
                         
                         // Update UI for new step
                         update_step_ui(
@@ -320,6 +336,7 @@ pub fn show_wizard() -> Result<(), Box<dyn std::error::Error>> {
                         );
                     } else if handle == btn_back_handle && step > 1 {
                         step_clone.set(step - 1);
+                        eprintln!("[Wizard] Returned to step {}", step - 1);
                         
                         // Update UI for new step
                         update_step_ui(
@@ -342,15 +359,19 @@ pub fn show_wizard() -> Result<(), Box<dyn std::error::Error>> {
                                 lbl_firewall_status_rc.set_text(&format!("✓ {}", msg));
                             }
                             Err(msg) => {
+                                // Don't crash on firewall error, just continue
+                                eprintln!("[Wizard] Firewall error (continuing): {}", msg);
                                 lbl_firewall_status_rc.set_text(&format!("✗ {}", msg));
                             }
                         }
                     } else if handle == btn_finish_handle && step == 3 {
+                        eprintln!("[Wizard] Wizard completed");
                         should_finish_clone.set(true);
                         nwg::stop_thread_dispatch();
                     }
                 }
                 E::OnWindowClose => {
+                    eprintln!("[Wizard] Wizard closed by user");
                     nwg::stop_thread_dispatch();
                 }
                 _ => {}

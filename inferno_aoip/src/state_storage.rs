@@ -35,11 +35,30 @@ pub struct StateStorage {
 
 impl StateStorage {
   pub fn new(self_info: &DeviceInfo) -> Self {
-    let dir = AppDirs::new(Some("inferno_aoip"), false).unwrap().state_dir.to_str().unwrap().to_owned()
-      + MAIN_SEPARATOR_STR
-      + &hex::encode(self_info.factory_device_id);
-    create_dir_all(&dir).log_and_forget();
-    info!("using state directory: {dir}");
+    let app_dirs = match AppDirs::new(Some("inferno_aoip"), false) {
+      Some(dirs) => dirs,
+      None => {
+        error!("failed to determine application state directory, using current directory");
+        let app_dirs = AppDirs::new(None, false).unwrap_or_else(|| {
+          panic!("unable to create AppDirs with fallback");
+        });
+        app_dirs
+      }
+    };
+
+    let base_dir = match app_dirs.state_dir.to_str() {
+      Some(s) => s.to_owned(),
+      None => {
+        error!("state directory path is not UTF-8, using current directory");
+        ".".to_owned()
+      }
+    };
+
+    let dir = format!("{}{}{}", base_dir, MAIN_SEPARATOR_STR, hex::encode(self_info.factory_device_id));
+    if let Err(e) = create_dir_all(&dir) {
+      error!("failed to create state directory '{}': {}", dir, e);
+    }
+    info!(state_dir = %dir, "state storage initialized");
     Self { path_prefix: dir + MAIN_SEPARATOR_STR }
   }
   fn full_path(&self, name: &str) -> String {

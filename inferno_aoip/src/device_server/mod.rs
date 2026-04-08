@@ -166,7 +166,11 @@ impl DeviceServer {
         mcast_rx,
         shared_media_clock.clone(),
         channels_sub_rx,
-        Box::new(move || ((rxps.read().unwrap())(), (txps.read().unwrap())())),
+        Box::new(move || {
+          let rx_peaks = rxps.read().map(|g| g()).unwrap_or_default();
+          let tx_peaks = txps.read().map(|g| g()).unwrap_or_default();
+          (rx_peaks, tx_peaks)
+        }),
         shdn_recv3,
       )),
     ]);
@@ -175,11 +179,18 @@ impl DeviceServer {
 
     let mdns_server = mdns_handle.clone();
     let shutdown_todo = async move {
-      shutdown_send.send(()).unwrap();
+      // Explicit detach: shutdown task orchestrates graceful termination of all services
+      if let Err(e) = shutdown_send.send(()) {
+        error!("failed to broadcast shutdown signal: {}", e);
+      }
       for task in tasks {
-        task.await.unwrap();
+        match task.await {
+          Ok(_) => {},
+          Err(e) => error!("task join error during shutdown: {}", e),
+        }
       }
       mdns_handle.shutdown_and_join();
+      info!("all tasks shut down successfully");
     }
     .boxed();
 
@@ -235,7 +246,14 @@ impl DeviceServer {
   ) {
     let buffering = ExternalBuffering::new(rx_channels_buffers, self.settings.latency_ref_samples);
     let rbs = buffering.ring_buffers.clone();
-    *self.rx_peaks_supplier.write().unwrap() = Box::new(move || peaks_of_buffers(&rbs));
+    match self.rx_peaks_supplier.write() {
+      Ok(mut supplier) => {
+        *supplier = Box::new(move || peaks_of_buffers(&rbs));
+      },
+      Err(e) => {
+        error!("failed to acquire write lock on rx_peaks_supplier: {}", e);
+      }
+    }
     self.receive(vec![], Some(start_time_rx), buffering, current_timestamp, on_transfer).await;
   }
   async fn receive<
@@ -292,9 +310,15 @@ impl DeviceServer {
     let shutdown_todo = async move {
       flows_rx_handle.shutdown().await;
       channels_sub_handle.shutdown().await;
-      flows_rx_thread.join().unwrap();
+      match flows_rx_thread.join() {
+        Ok(_) => {},
+        Err(e) => error!("RX thread join panicked: {:?}", e),
+      }
       for task in tasks {
-        task.await.unwrap();
+        match task.await {
+          Ok(_) => {},
+          Err(e) => error!("task join error during RX shutdown: {}", e),
+        }
       }
       info!("receiver stopped");
     }
@@ -303,7 +327,10 @@ impl DeviceServer {
   }
   pub async fn stop_receiver(&mut self) {
     let _ = self.channels_sub_tx.send(None);
-    self.rx_shutdown_todo.take().unwrap().await;
+    match self.rx_shutdown_todo.take() {
+      Some(shutdown) => shutdown.await,
+      None => error!("stop_receiver called but rx_shutdown_todo is None"),
+    }
   }
 
   pub async fn transmit_from_external_buffer(
@@ -316,7 +343,14 @@ impl DeviceServer {
     let rb_outputs: Vec<_> =
       tx_channels_buffers.iter().map(|par| ring_buffer::wrap_external_source(par, 0)).collect();
     let rbs = rb_outputs.iter().map(|rbo| rbo.shared().clone()).collect_vec();
-    *self.tx_peaks_supplier.write().unwrap() = Box::new(move || peaks_of_buffers(&rbs));
+    match self.tx_peaks_supplier.write() {
+      Ok(mut supplier) => {
+        *supplier = Box::new(move || peaks_of_buffers(&rbs));
+      },
+      Err(e) => {
+        error!("failed to acquire write lock on tx_peaks_supplier: {}", e);
+      }
+    }
     self.transmit(Some(start_time_rx), rb_outputs, current_timestamp, on_transfer).await;
   }
   async fn transmit<P: ProxyToSamplesBuffer + Send + Sync + 'static>(

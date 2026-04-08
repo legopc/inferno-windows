@@ -27,6 +27,16 @@ mod shm_reader;
 
 pub use config::Config;
 
+// ────────────────────────────────────────────────────────────────────────────────
+// Named constants for clarity and maintainability
+const QUEUE_BUFFER_DURATION_MS: usize = 250;      // 250ms ring buffer
+const RENDER_STATS_LOG_INTERVAL_SECS: u64 = 10;   // Log stats every 10s
+const HEALTH_CHECK_INTERVAL_SECS: u64 = 30;       // Health monitor interval
+const FIREWALL_PORTS: &[u16] = &[4440, 4455, 5353, 8700, 8800];
+const PANIC_BACKTRACE_ENABLED: bool = true;
+const LOCK_FILE_NAME: &str = "device.lock";
+const WASAPI_EVENT_TIMEOUT_MS: u32 = 200;
+
 use std::collections::{BTreeMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -1028,7 +1038,10 @@ async fn main() -> Result<()> {
         if let Some(parent) = lock_path.parent() {
             let _ = std::fs::create_dir_all(parent);
         }
-        std::fs::write(&lock_path, b"locked").ok();
+        match std::fs::write(&lock_path, b"locked") {
+            Ok(()) => tracing::debug!("Device lock file written"),
+            Err(e) => tracing::warn!("Failed to write device lock: {}", e),
+        }
         println!("Device locked. Use --unlock to re-enable changes.");
         return Ok(());
     }
@@ -1038,7 +1051,10 @@ async fn main() -> Result<()> {
             .unwrap_or_else(|| std::path::PathBuf::from("."))
             .join("inferno_aoip")
             .join("device.lock");
-        std::fs::remove_file(&lock_path).ok();
+        match std::fs::remove_file(&lock_path) {
+            Ok(()) => tracing::debug!("Device lock file removed"),
+            Err(e) => tracing::warn!("Failed to remove device lock: {}", e),
+        }
         println!("Device unlocked. Configuration changes are now allowed.");
         return Ok(());
     }

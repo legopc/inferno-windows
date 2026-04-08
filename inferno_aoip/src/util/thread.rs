@@ -10,12 +10,17 @@ pub fn run_future_in_new_thread(
   std::thread::Builder::new()
     .name(name.clone())
     .spawn(move || {
-      tokio::runtime::Builder::new_current_thread()
-        .thread_name(name)
+      let rt = match tokio::runtime::Builder::new_current_thread()
+        .thread_name(name.clone())
         .enable_all()
-        .build()
-        .unwrap()
-        .block_on(future_cb());
+        .build() {
+        Ok(runtime) => runtime,
+        Err(e) => {
+          eprintln!("Failed to create tokio runtime for thread '{}': {}", name, e);
+          return;
+        }
+      };
+      rt.block_on(future_cb());
     })
-    .unwrap()
+    .expect("Failed to spawn thread")
 }

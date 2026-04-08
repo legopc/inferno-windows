@@ -7,9 +7,11 @@ pub fn set_current_thread_realtime(priority_hint: u8) -> Result<(), Error> {
     RealtimeThreadSchedulePolicy, ThreadPriority, ThreadPriorityValue, ThreadSchedulePolicy,
   };
 
+  let priority_value = ThreadPriorityValue::try_from(priority_hint)
+    .map_err(|_| Error::InvalidThreadPriority)?;
   set_thread_priority_and_policy(
     thread_native_id(),
-    ThreadPriority::Crossplatform(ThreadPriorityValue::try_from(priority_hint).unwrap()),
+    ThreadPriority::Crossplatform(priority_value),
     ThreadSchedulePolicy::Realtime(RealtimeThreadSchedulePolicy::Fifo),
   )
 }
