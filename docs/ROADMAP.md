@@ -167,11 +167,58 @@ Fleet agents implement individual todos in parallel. Each sprint ends with a bui
 
 ---
 
+## Sprint 8 — Code Quality & Stability Iteration (Post-Sprint Polish)
+
+**Runs after all feature sprints (1–7) are complete. No new features — only hardening.**
+
+Goal: Walk every file touched across all sprints and look for opportunities to improve
+debuggability, resilience, and long-term maintainability. This is the "make it solid" pass.
+
+### What to look for on each pass:
+
+**Logging & Diagnostics**
+- Every error path should log enough context to diagnose without a debugger
+- Warnings for things that are unusual but recoverable (not just errors)
+- Structured fields on key log events (`tracing::info!(rate=%r, channels=%c, ...)`)
+- Rate-limit any log message that could fire more than once per second in normal operation
+- On startup, log all resolved config values (not just file path)
+
+**Error Handling**
+- No `unwrap()` or `expect()` outside of tests — replace with `?` or graceful fallback
+- All `Result` returns from protocol handlers should be logged before being dropped
+- Network errors should include remote address in the log message
+- Any `todo!()` or `unimplemented!()` macros left in non-test code → replace with proper errors
+
+**Resilience**
+- Any connection/socket that can fail should have a documented recovery path
+- Service should never exit due to a single flow failure — isolate flow errors
+- All tokio tasks should have a `.await` or be explicitly detached with a comment why
+- Spawned threads should have names set (`std::thread::Builder::new().name(...)`)
+
+**Code Clarity**
+- Magic numbers → named constants with a comment explaining the value and source
+- Complex match arms > 10 lines → extract to a named function
+- TODO comments that have a clear owner or known fix → either fix them or file as a tracked todo
+- Remove dead code (`#[allow(dead_code)]` should be rare and justified)
+
+**Test Coverage Gaps**
+- Any function with a FIXME that is now fixed → add a regression test
+- Any error path added → add a test that exercises it
+- IPC message round-trips for any new message types added in Sprints 2–4
+
+### How this sprint runs:
+Dispatch one fleet agent per crate (inferno_aoip, inferno_wasapi, inferno_gui, inferno2pipe).
+Each agent does a full read of its crate, applies the above checklist, and commits improvements.
+No agent should add features — only harden what exists.
+
+---
+
 ## How Sprints Are Executed
 
 1. Plan sprint → insert todos into SQL → dispatch fleet agents (1 per todo, parallel)
 2. Review agent output → fix failures → final `cargo build --workspace`
 3. Commit + push → checkpoint → update this doc
 4. Repeat with next sprint
+5. After Sprint 7: run Sprint 8 (polish pass) before any release tag
 
 Next sprint to execute: **Sprint 1 — Critical Stability**
