@@ -409,7 +409,9 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
     };
   }
   async fn notify_channels_change(&self, channel_indices: impl IntoIterator<Item = usize>) {
-    self.mcast.send(make_channel_change_notification(channel_indices)).await.log_and_forget();
+    if let Some(msg) = make_channel_change_notification(channel_indices) {
+      self.mcast.send(msg).await.log_and_forget();
+    }
   }
   pub async fn unsubscribe(&mut self, local_channel_index: usize, remove_from_info: bool) {
     if let Some(subscription) = &self.channels[local_channel_index] {

@@ -34,9 +34,8 @@ pub async fn run_server(
       match request.opcode1().read() {
         0x0100 => {
           // request flow
-          // TODO add index sanity checks
           let c = request.content();
-          if c.len() <= 16 {
+          if c.len() < 16 {
             error!("invalid flow request, too short packet: {}", hex::encode(c));
             continue;
           }
@@ -49,6 +48,15 @@ pub async fn run_server(
           }
           let num_channels = make_u16(c[12], c[13]);
           let remote_descr_offset = make_u16(c[14], c[15]) as usize;
+          
+          // Validate bounds for channel indices before accessing them
+          let required_len = 16 + (num_channels as usize) * 2 + 6 + 4;
+          if c.len() < required_len {
+            error!("packet too short for num_channels: {} (need {} bytes)", hex::encode(c), required_len);
+            conn.respond_with_code(0x0302u16, &[]).await;
+            continue;
+          }
+          
           let channel_indices = (0..num_channels as usize)
             .map(|i| {
               let id = make_u16(c[16 + i * 2], c[17 + i * 2]);
@@ -63,12 +71,30 @@ pub async fn run_server(
           let rx_flow_name_offset = make_u16(c[offset + 2], c[offset + 3]) as usize;
 
           let req_bytes = request.into_storage();
-          let hostname = read_0term_str_from_buffer(req_bytes, hostname_offset).unwrap().to_owned();
+          
+          // Validate offsets before reading strings
+          // map_err converts Box<dyn StdError> (non-Send) to () so the future stays Send
+          let hostname = match read_0term_str_from_buffer(req_bytes, hostname_offset).map_err(|_| ()) {
+            Ok(s) => s.to_owned(),
+            Err(()) => {
+              error!("invalid hostname offset: {}", hostname_offset);
+              conn.respond_with_code(0x0302u16, &[]).await;
+              continue;
+            }
+          };
           let rx_flow_name =
-            read_0term_str_from_buffer(req_bytes, rx_flow_name_offset).unwrap().to_owned();
+            match read_0term_str_from_buffer(req_bytes, rx_flow_name_offset).map_err(|_| ()) {
+              Ok(s) => s.to_owned(),
+              Err(()) => {
+                error!("invalid rx_flow_name offset: {}", rx_flow_name_offset);
+                conn.respond_with_code(0x0302u16, &[]).await;
+                continue;
+              }
+            };
 
           if req_bytes.len() < remote_descr_offset + 8 {
             error!("packet too short: {}", hex::encode(req_bytes));
+            conn.respond_with_code(0x0302u16, &[]).await;
             continue;
           }
 
@@ -131,6 +157,7 @@ pub async fn run_server(
             handle
           } else {
             error!("packet too short: {}", hex::encode(request.content()));
+            conn.respond_with_code(0x0302u16, &[]).await;
             continue;
           };
           if let Ok(flow_index) = flows_tx.lock().await.as_mut().unwrap().remove_flow(handle).await {
@@ -144,8 +171,19 @@ pub async fn run_server(
         0x0102 => {
           // update flow
           let c = request.content();
+          if c.len() < 8 {
+            error!("packet too short for update flow: {}", hex::encode(c));
+            conn.respond_with_code(0x0302u16, &[]).await;
+            continue;
+          }
           let handle: FlowHandle = c[0..6].try_into().unwrap();
           let num_channels = make_u16(c[6], c[7]);
+
+          if c.len() < 8 + (num_channels as usize) * 2 {
+            error!("packet too short for update flow channels: {} (need {} bytes)", hex::encode(c), 8 + (num_channels as usize) * 2);
+            conn.respond_with_code(0x0302u16, &[]).await;
+            continue;
+          }
 
           let channel_indices = (0..num_channels as usize)
             .map(|i| {

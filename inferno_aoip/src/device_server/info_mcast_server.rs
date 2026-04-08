@@ -105,7 +105,10 @@ impl<'s> Multicaster<'s> {
       content,
     );
     self.seqnum = self.seqnum.wrapping_add(1);
-    self.server.send(&dst, pkt).await;
+    match pkt {
+      Ok(pkt) => self.server.send(&dst, pkt).await,
+      Err(e) => tracing::warn!("Failed to build info multicast packet: {}", e),
+    }
   }
 
   async fn send_board_info(&mut self) {

@@ -288,7 +288,9 @@ pub async fn run_server(
               }
             }
             });
-            mcast.send(make_channel_change_notification(renamed_indices)).await.log_and_forget();
+            if let Some(msg) = make_channel_change_notification(renamed_indices) {
+              mcast.send(msg).await.log_and_forget();
+            }
             conn.respond_with_code(if renamed_any { 1 } else { 0xFFFF /* TODO */}, &[]).await;
           }
         }

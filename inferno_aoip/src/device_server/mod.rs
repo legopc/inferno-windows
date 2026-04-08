@@ -111,7 +111,7 @@ pub struct DeviceServer {
 
 impl DeviceServer {
   pub async fn start(settings: settings::Settings) -> Self {
-    let self_info = Arc::new(settings.self_info);
+    let self_info = Arc::new(settings.self_info.clone());
     let settings = Arc::new(settings);
     let state_storage = Arc::new(StateStorage::new(&self_info));
     let ref_instant = Instant::now();
