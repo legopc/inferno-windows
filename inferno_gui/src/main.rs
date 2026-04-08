@@ -8,6 +8,7 @@ use native_windows_gui as nwg;
 use serde::{Deserialize, Serialize};
 
 mod settings_window;
+mod wizard;
 
 // ── IPC types ────────────────────────────────────────────────────────────────
 
@@ -212,6 +213,15 @@ fn db_to_percent(db: f32) -> u32 {
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 fn main() {
+    // Check if config exists, if not run wizard
+    let config_path = settings_window::get_config_path();
+    if !config_path.exists() {
+        if let Err(e) = wizard::show_wizard() {
+            eprintln!("Wizard error: {}", e);
+            return;
+        }
+    }
+
     nwg::init().expect("Failed to init NWG");
     nwg::Font::set_global_family("Segoe UI").expect("Failed to set font");
 

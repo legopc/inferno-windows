@@ -7,4 +7,5 @@ members = [
     "inferno_wasapi",
     "inferno2pipe",
     "inferno_gui",
+    "inferno_asio",
 ]

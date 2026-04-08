@@ -1,0 +1,10 @@
+[package]
+name = "inferno_asio"
+version = "0.1.0"
+edition = "2021"
+description = "ASIO host for Inferno audio engine (stub crate, native implementation planned)"
+license = "Apache-2.0"
+
+[dependencies]
+
+[dev-dependencies]
