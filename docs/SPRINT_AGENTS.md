@@ -57,9 +57,9 @@ Wave B (after Wave A — adds to main window):
 
 | Agent ID | Model | Task | Outcome |
 |---|---|---|---|
-| `s3-tx-latency-config` | claude-haiku-4.5 (Fleet Worker) | Wire flows_tx.rs hardcoded latency to config.latency_ref_samples | 🔄 Running |
+| `s3-tx-latency-config` | claude-haiku-4.5 (Fleet Worker) | Wire flows_tx.rs hardcoded latency to config.latency_ref_samples | ✅ Committed |
 | `s3-tx-status-ipc` | claude-haiku-4.5 (Fleet Worker) | Report real TX channel count, active state, and peak levels in IPC | 🔄 Running |
-| `s3-vb-cable-autodetect` | claude-haiku-4.5 (Fleet Worker) | Auto-detect VB-Cable / Stereo Mix on startup; warn if not found | 🔄 Running |
+| `s3-vb-cable-autodetect` | claude-haiku-4.5 (Fleet Worker) | Auto-detect VB-Cable / Stereo Mix on startup; warn if not found | ✅ Committed |
 
 ---
 
