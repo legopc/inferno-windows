@@ -23,6 +23,12 @@ cargo build --release -p inferno_wasapi
 
 ### 2. Open Firewall (Admin)
 
+Run with the `--setup-firewall` flag to auto-configure netsh rules:
+```powershell
+.\target\release\inferno_wasapi.exe --setup-firewall
+```
+
+Alternatively, use the legacy script:
 ```powershell
 .\scripts\open-firewall-admin.ps1
 ```
@@ -73,6 +79,12 @@ Select **"CABLE Output"** in OBS, Audacity, browser, DAW, etc. to receive Dante 
 | `--list-dante-devices` | Discover Dante devices via mDNS |
 | `--list-interfaces` | List network interfaces with IPs |
 
+### Setup & Admin
+
+| Flag | Purpose |
+|------|---------|
+| `--setup-firewall` | Configure Windows Firewall rules for Dante ports and exit |
+
 ### RX Mode Options
 
 | Flag | Description |
@@ -119,6 +131,11 @@ GUI: `inferno_gui.exe` — Win32 status window, IPC-connected, no GPU required
 ## Configuration & Logging
 
 **Config file:** `%LOCALAPPDATA%\inferno_aoip\config.toml` (auto-created on first run)
+
+**Supported sample rates:**
+- 44100 Hz
+- 48000 Hz (default)
+- 96000 Hz (⚠️ Dante hardware limit: max 32 channels at 96kHz; see NOTES.md for details)
 
 **Logs:** `%LOCALAPPDATA%\inferno_aoip\logs\inferno.log` (daily rolling)
 

@@ -123,6 +123,16 @@ impl Config {
             Config::default()
         };
 
+        // Validate sample rate
+        match config.sample_rate {
+            44100 | 48000 | 96000 => {},
+            sr => {
+                tracing::warn!("Unsupported sample rate {}Hz — defaulting to 48000Hz. \
+                               Supported rates: 44100, 48000, 96000", sr);
+                config.sample_rate = 48000;
+            }
+        }
+
         // Validate channel count
         if config.channels == 0 || config.channels > 64 {
             tracing::warn!("Invalid channel count {} in config, clamping to 2", config.channels);

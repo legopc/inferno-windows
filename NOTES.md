@@ -109,6 +109,41 @@ in `inferno_aoip/src/device_server/samples_utils.rs` lines 84-90.
 WASAPI Shared mode on modern Windows requires **f32** (IEEE float, range [-1.0, 1.0]).
 Conversion: `sample as f32 / 2147483648.0_f32`
 
+## 96kHz Operation
+
+Inferno supports 96kHz streaming with the following caveats:
+
+**Hardware Limits**:
+- Dante hardware devices: **maximum 32 channels at 96kHz** (Dante Virtual Soundcard supports 64ch@96k)
+- Network bandwidth doubles vs. 48kHz (~38 Mbps per 32-channel flow at 96kHz)
+- Some older Dante hardware may only support 48kHz
+
+**How to Enable**:
+- Set `sample_rate = 96000` in `config.toml` (`%LOCALAPPDATA%\inferno_aoip\config.toml`)
+- Or pass `--sample-rate 96000` on the command line
+
+**Configuration Examples**:
+```toml
+[Dante RX at 96kHz]
+sample_rate = 96000
+channels = 32
+
+[Windows TX at 96kHz (capture loopback)]
+sample_rate = 96000
+channels = 2
+```
+
+**Performance Notes**:
+- CPU load increases at 96kHz due to doubled packet rate
+- Network buffer requirements increase proportionally
+- Ensure your Dante network adapter supports 96kHz operation (check Dante Controller info)
+- Tested with: Dante Controller showing 96kHz sample rate in device info
+
+**Known Limitations**:
+- Older Dante hardware may reject >32 channel flows at 96kHz
+- PTP clock synchronization (if implemented) becomes more critical at higher sample rates
+- Windows WASAPI exclusive mode may have stricter format negotiation at 96kHz
+
 ## Unknown ARC Opcode 0x2204
 
 Dante Controller sends opcode `0x2204` which is not implemented in inferno_aoip.

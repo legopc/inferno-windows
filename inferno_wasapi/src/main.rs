@@ -14,6 +14,7 @@
 //!   thread so it never blocks the tokio executor
 
 mod config;
+mod firewall;
 mod logging;
 mod metering;
 mod service;
@@ -120,6 +121,10 @@ struct Args {
     /// (requires SYSVAD driver to be installed and running)
     #[arg(long)]
     use_driver: bool,
+
+    /// Set up Windows Firewall rules for Dante/PTP/mDNS ports and exit
+    #[arg(long)]
+    setup_firewall: bool,
 }
 
 /// Auto-detect TX capture device: look for VB-Cable first, then Stereo Mix.
@@ -948,6 +953,19 @@ async fn main() -> Result<()> {
 
     let args = Args::parse();
 
+    // Handle firewall setup
+    if args.setup_firewall {
+        let result = firewall::setup_firewall_rules();
+        for r in &result.rules_added { info!("Added firewall rule: {}", r); }
+        for e in &result.errors { tracing::error!("Firewall error: {}", e); }
+        if result.errors.is_empty() {
+            println!("Firewall rules configured successfully ({} rules added)", result.rules_added.len());
+        } else {
+            eprintln!("Some rules failed — try running as Administrator");
+        }
+        return Ok(());
+    }
+
     // Handle service install/uninstall
     if args.install_service {
         match service_install::install_service() {
@@ -1199,6 +1217,20 @@ async fn main() -> Result<()> {
     info!("IP: {}", settings.self_info.ip_address);
     info!("Channels: {}", args.channels);
     info!("Sample rate: {} Hz", args.sample_rate);
+
+    // Dante hardware limit: max 32 channels at 96kHz
+    if args.sample_rate == 96000 && args.channels > 32 {
+        warn!(
+            "96kHz mode supports a maximum of 32 Dante channels (configured: {}). \
+             Dante hardware devices may reject flows with >32 channels at 96kHz. \
+             Consider reducing channels to 32 or using 48kHz for higher channel counts.",
+            args.channels
+        );
+    }
+    if args.sample_rate == 96000 {
+        info!("96kHz mode active — note: network bandwidth doubles vs 48kHz; \
+               ensure your Dante network supports 96kHz operation");
+    }
 
     // Shared audio queue: Dante callback -> WASAPI render thread
     // Capped at 250ms to prevent unbounded growth if WASAPI stalls
