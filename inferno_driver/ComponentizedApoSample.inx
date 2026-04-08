@@ -1,0 +1,192 @@
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = AudioProcessingObject
+ClassGuid   = {5989fce8-9cd0-467d-8a6a-5419e31529d4}
+Provider    = Inferno Project
+DriverVer   = 02/22/2016,1.0.0.1
+CatalogFile = sysvad.cat
+PnpLockDown = 1
+
+[Manufacturer]
+Inferno Project = ApoComponents,NT$ARCH$.10.0...22621
+
+[ApoComponents.NT$ARCH$.10.0...22621]
+%Apo.ComponentDesc% = ApoComponent_Install,SWC\VEN_SMPL&CID_APO
+
+[ApoComponent_Install]
+CopyFiles = Apo_CopyFiles
+AddReg    = Apo_AddReg
+
+[Apo_CopyFiles]
+swapapo.dll
+delayapo.dll
+kwsapo.dll
+aecapo.dll
+
+[Apo_AddReg]
+
+; Swap Stream effect APO COM registration
+HKR,Classes\CLSID\%SWAP_FX_STREAM_CLSID%,,,%SFX_FriendlyName%
+HKR,Classes\CLSID\%SWAP_FX_STREAM_CLSID%\InProcServer32,,0x00020000,%13%\swapapo.dll
+HKR,Classes\CLSID\%SWAP_FX_STREAM_CLSID%\InProcServer32,ThreadingModel,,"Both"
+
+; Swap Mode effect APO COM registration
+HKR,Classes\CLSID\%SWAP_FX_MODE_CLSID%,,,%MFX_FriendlyName%
+HKR,Classes\CLSID\%SWAP_FX_MODE_CLSID%\InProcServer32,,0x00020000,%13%\swapapo.dll
+HKR,Classes\CLSID\%SWAP_FX_MODE_CLSID%\InProcServer32,ThreadingModel,,"Both"
+
+; Delay Stream effect APO COM registration
+HKR,Classes\CLSID\%DELAY_FX_STREAM_CLSID%,,,%SFX_FriendlyName%
+HKR,Classes\CLSID\%DELAY_FX_STREAM_CLSID%\InProcServer32,,0x00020000,%13%\delayapo.dll
+HKR,Classes\CLSID\%DELAY_FX_STREAM_CLSID%\InProcServer32,ThreadingModel,,"Both"
+
+; Delay Mode effect APO COM registration
+HKR,Classes\CLSID\%DELAY_FX_MODE_CLSID%,,,%MFX_FriendlyName%
+HKR,Classes\CLSID\%DELAY_FX_MODE_CLSID%\InProcServer32,,0x00020000,%13%\delayapo.dll
+HKR,Classes\CLSID\%DELAY_FX_MODE_CLSID%\InProcServer32,ThreadingModel,,"Both"
+
+; Keyword Spotter Endpoint effect APO COM registration
+HKR,Classes\CLSID\%KWS_FX_ENDPOINT_CLSID%,,,%KWS_FriendlyName%
+HKR,Classes\CLSID\%KWS_FX_ENDPOINT_CLSID%\InProcServer32,,0x00020000,%13%\KWSApo.dll
+HKR,Classes\CLSID\%KWS_FX_ENDPOINT_CLSID%\InProcServer32,ThreadingModel,,"Both"
+
+; AEC APO Mode effect APO COM registration
+HKR,Classes\CLSID\%AEC_FX_MODE_CLSID%,,,%AEC_FriendlyName%
+HKR,Classes\CLSID\%AEC_FX_MODE_CLSID%\InProcServer32,,0x00020000,%13%\AecApo.dll
+HKR,Classes\CLSID\%AEC_FX_MODE_CLSID%\InProcServer32,ThreadingModel,,"Both"
+
+; Swap Stream effect APO registration
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_STREAM_CLSID%, "FriendlyName", ,%SFX_FriendlyName%
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_STREAM_CLSID%, "Copyright", ,%Copyright%
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_STREAM_CLSID%, "MajorVersion", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_STREAM_CLSID%, "MinorVersion", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_STREAM_CLSID%, "Flags", 0x00010001, %APO_FLAG_DEFAULT%
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_STREAM_CLSID%, "MinInputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_STREAM_CLSID%, "MaxInputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_STREAM_CLSID%, "MinOutputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_STREAM_CLSID%, "MaxOutputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_STREAM_CLSID%, "MaxInstances", 0x00010001, 0xffffffff
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_STREAM_CLSID%, "NumAPOInterfaces", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_STREAM_CLSID%, "APOInterface0", ,"{FD7F2B29-24D0-4B5C-B177-592C39F9CA10}"
+
+; Swap Mode effect APO registration
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_MODE_CLSID%, "FriendlyName", ,%MFX_FriendlyName%
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_MODE_CLSID%, "Copyright", ,%Copyright%
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_MODE_CLSID%, "MajorVersion", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_MODE_CLSID%, "MinorVersion", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_MODE_CLSID%, "Flags", 0x00010001, %APO_FLAG_DEFAULT%
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_MODE_CLSID%, "MinInputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_MODE_CLSID%, "MaxInputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_MODE_CLSID%, "MinOutputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_MODE_CLSID%, "MaxOutputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_MODE_CLSID%, "MaxInstances", 0x00010001, 0xffffffff
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_MODE_CLSID%, "NumAPOInterfaces", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%SWAP_FX_MODE_CLSID%, "APOInterface0", ,"{FD7F2B29-24D0-4B5C-B177-592C39F9CA10}"
+
+; Delay Stream effect APO registration
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_STREAM_CLSID%, "FriendlyName", ,%SFX_FriendlyName%
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_STREAM_CLSID%, "Copyright", ,%Copyright%
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_STREAM_CLSID%, "MajorVersion", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_STREAM_CLSID%, "MinorVersion", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_STREAM_CLSID%, "Flags", 0x00010001, %APO_FLAG_DEFAULT%
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_STREAM_CLSID%, "MinInputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_STREAM_CLSID%, "MaxInputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_STREAM_CLSID%, "MinOutputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_STREAM_CLSID%, "MaxOutputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_STREAM_CLSID%, "MaxInstances", 0x00010001, 0xffffffff
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_STREAM_CLSID%, "NumAPOInterfaces", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_STREAM_CLSID%, "APOInterface0", ,"{FD7F2B29-24D0-4B5C-B177-592C39F9CA10}"
+
+; Delay Mode effect APO registration
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_MODE_CLSID%, "FriendlyName", ,%MFX_FriendlyName%
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_MODE_CLSID%, "Copyright", ,%Copyright%
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_MODE_CLSID%, "MajorVersion", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_MODE_CLSID%, "MinorVersion", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_MODE_CLSID%, "Flags", 0x00010001, %APO_FLAG_DEFAULT%
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_MODE_CLSID%, "MinInputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_MODE_CLSID%, "MaxInputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_MODE_CLSID%, "MinOutputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_MODE_CLSID%, "MaxOutputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_MODE_CLSID%, "MaxInstances", 0x00010001, 0xffffffff
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_MODE_CLSID%, "NumAPOInterfaces", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%DELAY_FX_MODE_CLSID%, "APOInterface0", ,"{FD7F2B29-24D0-4B5C-B177-592C39F9CA10}"
+
+; Keyword Spotter APO registration
+HKR,AudioEngine\AudioProcessingObjects\%KWS_FX_ENDPOINT_CLSID%, "FriendlyName", ,%KWS_FriendlyName%
+HKR,AudioEngine\AudioProcessingObjects\%KWS_FX_ENDPOINT_CLSID%, "Copyright", ,%Copyright%
+HKR,AudioEngine\AudioProcessingObjects\%KWS_FX_ENDPOINT_CLSID%, "MajorVersion", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%KWS_FX_ENDPOINT_CLSID%, "MinorVersion", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%KWS_FX_ENDPOINT_CLSID%, "Flags", 0x00010001, 0xC
+HKR,AudioEngine\AudioProcessingObjects\%KWS_FX_ENDPOINT_CLSID%, "MinInputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%KWS_FX_ENDPOINT_CLSID%, "MaxInputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%KWS_FX_ENDPOINT_CLSID%, "MinOutputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%KWS_FX_ENDPOINT_CLSID%, "MaxOutputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%KWS_FX_ENDPOINT_CLSID%, "MaxInstances", 0x00010001, 0xffffffff
+HKR,AudioEngine\AudioProcessingObjects\%KWS_FX_ENDPOINT_CLSID%, "NumAPOInterfaces", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%KWS_FX_ENDPOINT_CLSID%, "APOInterface0", ,"{FD7F2B29-24D0-4B5C-B177-592C39F9CA10}"
+
+; AEC APO registration
+HKR,AudioEngine\AudioProcessingObjects\%AEC_FX_MODE_CLSID%,"FriendlyName", ,%AEC_FriendlyName%
+HKR,AudioEngine\AudioProcessingObjects\%AEC_FX_MODE_CLSID%,"Copyright", ,%Copyright%
+HKR,AudioEngine\AudioProcessingObjects\%AEC_FX_MODE_CLSID%,"MajorVersion", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%AEC_FX_MODE_CLSID%,"MinorVersion", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%AEC_FX_MODE_CLSID%,"Flags", 0x00010001, 0xC
+HKR,AudioEngine\AudioProcessingObjects\%AEC_FX_MODE_CLSID%,"MinInputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%AEC_FX_MODE_CLSID%,"MaxInputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%AEC_FX_MODE_CLSID%,"MinOutputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%AEC_FX_MODE_CLSID%,"MaxOutputConnections", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%AEC_FX_MODE_CLSID%,"MaxInstances", 0x00010001, 0xffffffff
+HKR,AudioEngine\AudioProcessingObjects\%AEC_FX_MODE_CLSID%,"NumAPOInterfaces", 0x00010001, 1
+HKR,AudioEngine\AudioProcessingObjects\%AEC_FX_MODE_CLSID%,"APOInterface0", ,"{FD7F2B29-24D0-4B5C-B177-592C39F9CA10}"
+
+[ApoComponent_Install.HW]
+AddReg = FriendlyName_AddReg
+
+[FriendlyName_AddReg]
+HKR,,FriendlyName,,%Apo.ComponentDesc%
+
+[ApoComponent_Install.Services]
+AddService=,2    ; no function driver, install a null driver.
+
+[SourceDisksNames]
+1 = Disk
+
+[SourceDisksFiles]
+swapapo.dll  = 1
+delayapo.dll = 1
+kwsapo.dll   = 1
+aecapo.dll   = 1
+
+[DestinationDirs]
+Apo_CopyFiles = 13 ; 13=Package's DriverStore directory
+
+[SignatureAttributes]
+swapapo.dll  = SignatureAttributes.PETrust
+delayapo.dll = SignatureAttributes.PETrust
+kwsapo.dll = SignatureAttributes.PETrust
+aecapo.dll = SignatureAttributes.PETrust
+
+[SignatureAttributes.PETrust]
+PETrust = true
+
+[Strings]
+MfgName           = "TODO-Set-Manufacturer"
+ProviderName      = "TODO-Set-Provider"
+Apo.ComponentDesc = "Audio Proxy APO Sample"
+
+; Driver developers would replace these CLSIDs with those of their own APOs
+SWAP_FX_STREAM_CLSID   = "{B48DEA3F-D962-425a-8D9A-9A5BB37A9904}"
+SWAP_FX_MODE_CLSID     = "{06687E71-F043-403A-BF49-CB591BA6E103}"
+DELAY_FX_STREAM_CLSID  = "{77802b45-a5a0-455a-8204-3dba30eee7b4}"
+DELAY_FX_MODE_CLSID    = "{b6c7032b-1f17-4cc6-bcdb-fd96deabc8a9}"
+KWS_FX_ENDPOINT_CLSID  = "{9D89F614-F9D6-40DD-9F21-5E69FA3981ED}"
+AEC_FX_MODE_CLSID      = "{325B7F6F-ED6C-40CE-814C-00D91FED053F}"
+
+; see audioenginebaseapo.idl for APO_FLAG enum values
+APO_FLAG_DEFAULT  = 0x0000000e
+
+SFX_FriendlyName  = "Audio Proxy APO Sample (stream effect)"
+MFX_FriendlyName  = "Audio Proxy APO Sample (mode effect)"
+KWS_FriendlyName  = "Keyword Spotter APO Sample (endpoint effect)"
+AEC_FriendlyName  = "Acoustic Echo Cancellation APO Sample (mode effect)"
+Copyright         = "Sample"
