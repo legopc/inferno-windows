@@ -30,9 +30,9 @@ impl ChannelMeter {
         let db_val = if peak == 0 {
             0u8
         } else {
-            let db = 20.0 * (peak as f32 / 2147483648.0).log10();
+            let db = 20.0 * (peak as f32 / MAX_I32_FLOAT).log10();
             // Map -90dB..0dB to 0..255 (Dante-like logarithmic scale)
-            ((db + 90.0) * 255.0 / 90.0).clamp(0.0, 255.0) as u8
+            ((db + DB_RANGE) * PEAK_SCALE_MAX as f32 / DB_RANGE).clamp(0.0, PEAK_SCALE_MAX as f32) as u8
         };
         // Peak hold: only update if new peak is higher
         let current = self.peaks[channel].load(Ordering::Relaxed);
