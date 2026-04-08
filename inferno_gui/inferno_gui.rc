@@ -1,0 +1,5 @@
+// Resource script to embed the application manifest
+#include <windows.h>
+
+// Manifest - activates Common Controls v6 (required by NWG)
+1 RT_MANIFEST "inferno_gui.manifest"

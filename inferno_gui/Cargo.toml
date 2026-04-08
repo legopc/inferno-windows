@@ -16,3 +16,6 @@ tokio = { version = "1", features = ["rt", "macros", "net", "io-util", "time", "
 if-addrs = "0.10"
 toml = "0.8"
 dirs = "5.0"
+
+[build-dependencies]
+embed-resource = "2"
