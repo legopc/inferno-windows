@@ -11,10 +11,21 @@ mod settings_window;
 
 // ── IPC types ────────────────────────────────────────────────────────────────
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct FlowInfo {
+    pub name: String,
+    pub source_ip: String,
+    pub channels: u32,
+    pub sample_rate: u32,
+    pub direction: String,
+    pub state: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 enum IpcMessage {
     GetStatus,
+    GetFlows,
     ReloadConfig,
     Shutdown,
     Status {
@@ -26,6 +37,10 @@ enum IpcMessage {
         clock_mode: String,
         tx_peak_db: Vec<f32>,
         uptime_secs: u64,
+    },
+    Flows {
+        rx: Vec<FlowInfo>,
+        tx: Vec<FlowInfo>,
     },
     Error {
         message: String,
@@ -42,6 +57,9 @@ struct StatusData {
     sample_rate: u32,
     clock_mode: String,
     uptime_secs: u64,
+    rx_flows: Vec<FlowInfo>,
+    tx_flows: Vec<FlowInfo>,
+    tx_peak_db: Vec<f32>,
 }
 
 type SharedStatus = Arc<Mutex<Option<StatusData>>>;
@@ -135,9 +153,36 @@ async fn try_poll_once(status: &SharedStatus, cmd: &SharedCmd) {
         sample_rate,
         clock_mode,
         uptime_secs,
+        tx_peak_db,
         ..
     }) = serde_json::from_str(&line)
     {
+        // Request flows after getting status
+        let msg = serde_json::to_vec(&IpcMessage::GetFlows).unwrap_or_default();
+        if writer.write_all(&msg).await.is_ok() && writer.write_all(b"\n").await.is_ok() {
+            let mut flows_line = String::new();
+            if let Ok(Ok(_)) = tokio::time::timeout(
+                Duration::from_secs(3),
+                reader.read_line(&mut flows_line),
+            ).await {
+                if let Ok(IpcMessage::Flows { rx, tx }) = serde_json::from_str(&flows_line) {
+                    *status.lock().unwrap() = Some(StatusData {
+                        tx_active,
+                        rx_active,
+                        rx_channels,
+                        sample_rate,
+                        clock_mode,
+                        uptime_secs,
+                        rx_flows: rx,
+                        tx_flows: tx,
+                        tx_peak_db,
+                    });
+                    return;
+                }
+            }
+        }
+        
+        // Fallback: set status without flows
         *status.lock().unwrap() = Some(StatusData {
             tx_active,
             rx_active,
@@ -145,7 +190,22 @@ async fn try_poll_once(status: &SharedStatus, cmd: &SharedCmd) {
             sample_rate,
             clock_mode,
             uptime_secs,
+            rx_flows: Vec::new(),
+            tx_flows: Vec::new(),
+            tx_peak_db,
         });
+    }
+}
+
+// ── Helper function for VU meter conversion ───────────────────────────────────
+
+fn db_to_percent(db: f32) -> u32 {
+    if db <= -60.0 {
+        0
+    } else if db >= 0.0 {
+        100
+    } else {
+        ((db + 60.0) / 60.0 * 100.0) as u32
     }
 }
 
@@ -158,7 +218,7 @@ fn main() {
     // ── Build window ──────────────────────────────────────────────────────────
     let mut window: nwg::Window = Default::default();
     nwg::Window::builder()
-        .size((420, 300))
+        .size((420, 520))
         .position((300, 300))
         .title("Inferno AoIP")
         .build(&mut window)
@@ -220,6 +280,64 @@ fn main() {
         .build(&mut lbl_peers)
         .unwrap();
 
+    // ── Active Flows section ───────────────────────────────────────────────────
+    let mut lbl_flows_title: nwg::Label = Default::default();
+    nwg::Label::builder()
+        .text("Active Flows:")
+        .position((10, 195))
+        .size((400, 20))
+        .parent(&window)
+        .build(&mut lbl_flows_title)
+        .unwrap();
+
+    let mut txt_flows: nwg::TextBox = Default::default();
+    nwg::TextBox::builder()
+        .text("")
+        .parent(&window)
+        .size((400, 90))
+        .position((10, 215))
+        .readonly(true)
+        .build(&mut txt_flows)
+        .unwrap();
+
+    // ── VU Meters section ──────────────────────────────────────────────────────
+    let mut lbl_vu_title: nwg::Label = Default::default();
+    nwg::Label::builder()
+        .text("TX Levels:")
+        .position((10, 310))
+        .size((400, 20))
+        .parent(&window)
+        .build(&mut lbl_vu_title)
+        .unwrap();
+
+    // Create 8 channel labels and progress bars
+    let mut lbl_ch: [nwg::Label; 8] = Default::default();
+    let mut pb_ch: [nwg::ProgressBar; 8] = Default::default();
+
+    for i in 0..8 {
+        let y = 330 + (i as i32 * 22);
+
+        // Channel label (displays dB value)
+        nwg::Label::builder()
+            .text(&format!("CH{}: ---", i + 1))
+            .position((10, y))
+            .size((80, 20))
+            .parent(&window)
+            .build(&mut lbl_ch[i])
+            .unwrap();
+
+        // Progress bar
+        nwg::ProgressBar::builder()
+            .range(0..100)
+            .step(1)
+            .parent(&window)
+            .size((330, 16))
+            .position((95, y + 2))
+            .build(&mut pb_ch[i])
+            .unwrap();
+    }
+
+
     // ── Buttons ───────────────────────────────────────────────────────────────
     let mut btn_reload: nwg::Button = Default::default();
     nwg::Button::builder()
@@ -280,7 +398,7 @@ fn main() {
     let mut timer: nwg::AnimationTimer = Default::default();
     nwg::AnimationTimer::builder()
         .parent(&window)
-        .interval(std::time::Duration::from_millis(2000))
+        .interval(std::time::Duration::from_millis(100))
         .build(&mut timer)
         .unwrap();
     timer.start();
@@ -299,6 +417,11 @@ fn main() {
     let lbl_clock = Rc::new(lbl_clock);
     let lbl_uptime = Rc::new(lbl_uptime);
     let lbl_peers = Rc::new(lbl_peers);
+    let _lbl_flows_title = Rc::new(lbl_flows_title);
+    let txt_flows = Rc::new(txt_flows);
+    let _lbl_vu_title = Rc::new(lbl_vu_title);
+    let lbl_ch = Rc::new(lbl_ch);
+    let pb_ch = Rc::new(pb_ch);
     let btn_reload = Rc::new(btn_reload);
     let btn_shutdown = Rc::new(btn_shutdown);
     let btn_view_logs = Rc::new(btn_view_logs);
@@ -346,6 +469,15 @@ fn main() {
                             lbl_clock.set_text("Clock: \u{2014}");
                             lbl_uptime.set_text("Uptime: \u{2014}");
                             lbl_peers.set_text("Peers: \u{2014}");
+                            txt_flows.set_text("No active flows");
+
+                            // Clear VU meters
+                            for i in 0..8 {
+                                pb_ch[i].set_pos(0);
+                                lbl_ch[i].set_text(&format!("CH{}: ---", i + 1));
+                                pb_ch[i].set_visible(false);
+                                lbl_ch[i].set_visible(false);
+                            }
                         }
                         Some(s) => {
                             let rx = if s.rx_active { "RX Active" } else { "RX Idle" };
@@ -359,6 +491,43 @@ fn main() {
                                 .set_text(&format!("Uptime: {}", format_uptime(s.uptime_secs)));
                             // Placeholder — real peers arrive via IPC once dante_peers field is added
                             lbl_peers.set_text("Peers: (discovering...)");
+                            
+                            // Build flows display
+                            let mut flow_text = String::new();
+                            for f in &s.rx_flows {
+                                flow_text.push_str(&format!("RX: {} from {} ({} ch @ {}Hz) [{}]\r\n",
+                                    f.name, f.source_ip, f.channels, f.sample_rate, f.state));
+                            }
+                            for f in &s.tx_flows {
+                                flow_text.push_str(&format!("TX: {} to {} ({} ch @ {}Hz) [{}]\r\n",
+                                    f.name, f.source_ip, f.channels, f.sample_rate, f.state));
+                            }
+                            if flow_text.is_empty() {
+                                flow_text = "No active flows".to_string();
+                            }
+                            txt_flows.set_text(&flow_text);
+
+                            // Update VU meters
+                            let peaks = &s.tx_peak_db;
+                            for i in 0..8 {
+                                if i < peaks.len() && s.tx_active {
+                                    let db_val = peaks[i];
+                                    pb_ch[i].set_pos(db_to_percent(db_val));
+                                    let db_str = if db_val <= -60.0 {
+                                        "-∞".to_string()
+                                    } else {
+                                        format!("{:.1}", db_val)
+                                    };
+                                    lbl_ch[i].set_text(&format!("CH{}: {} dB", i + 1, db_str));
+                                    pb_ch[i].set_visible(true);
+                                    lbl_ch[i].set_visible(true);
+                                } else {
+                                    pb_ch[i].set_pos(0);
+                                    lbl_ch[i].set_text(&format!("CH{}: ---", i + 1));
+                                    pb_ch[i].set_visible(false);
+                                    lbl_ch[i].set_visible(false);
+                                }
+                            }
                         }
                     }
                 }

@@ -40,14 +40,14 @@ Wave A (parallel — different file ownership):
 | Agent ID | Model | Task | Outcome |
 |---|---|---|---|
 | `s2-ipc-getflows` | claude-haiku-4.5 (Fleet Worker) | Add GetFlows IPC command; FlowInfo struct; wire to ServiceState | ✅ Committed |
-| `s2-settings-gui` | claude-haiku-4.5 (Fleet Worker) | Full Settings window (device name, sample rate, channels, NIC dropdown, FPP dropdown, channel names, Save & Apply) — covers todos s2-settings-tab + s2-device-dropdown + s2-channel-naming-ui + s2-fpp-dropdown | 🔄 Running |
+| `s2-settings-gui` | claude-haiku-4.5 (Fleet Worker) | Full Settings window (device name, sample rate, channels, NIC dropdown, FPP dropdown, channel names, Save & Apply) — covers todos s2-settings-tab + s2-device-dropdown + s2-channel-naming-ui + s2-fpp-dropdown | ✅ Committed `c9673e1` |
 
 Wave B (after Wave A — adds to main window):
 
 | Agent ID | Model | Task | Outcome |
 |---|---|---|---|
-| `s2-vu-meters` | claude-haiku-4.5 (Fleet Worker) | Real-time per-channel VU meter progress bars in main window (10fps) | ⏳ Pending Wave A |
-| `s2-flows-panel` | claude-haiku-4.5 (Fleet Worker) | Active flows list panel in main window using GetFlows IPC | ⏳ Pending Wave A |
+| `s2-vu-meters` | claude-haiku-4.5 (Fleet Worker) | Real-time per-channel VU meter progress bars in main window (10fps) | 🔄 Running |
+| `s2-flows-panel` | claude-haiku-4.5 (Fleet Worker) | Active flows list panel in main window using GetFlows IPC | 🔄 Running |
 
 ---
 
