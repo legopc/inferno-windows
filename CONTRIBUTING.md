@@ -31,7 +31,15 @@ cargo test --workspace
 cargo check --workspace
 cargo clippy --workspace
 cargo fmt --check
+
+# Run overnight soak test (8 hours by default)
+.\scripts\soak_test.ps1
+
+# Or custom duration
+.\scripts\soak_test.ps1 -DurationHours 24
 ```
+
+See [scripts/README.md](scripts/README.md) for detailed documentation on all available scripts.
 
 ### Run Locally (RX mode)
 

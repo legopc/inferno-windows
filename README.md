@@ -2,6 +2,8 @@
 
 Windows port of [Inferno](https://github.com/teodly/inferno) — an unofficial open-source implementation of the Dante AoIP protocol.
 
+[![Release](https://img.shields.io/github/v/release/legopc/inferno-windows)](https://github.com/legopc/inferno-windows/releases)
+
 **Receive Dante AoIP audio and play via Windows (RX mode)** or **capture Windows audio and transmit as Dante AoIP (TX mode)**.
 
 ## Quick Start

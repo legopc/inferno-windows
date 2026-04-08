@@ -61,14 +61,27 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install WiX Toolset
+        run: choco install wixtoolset -y
+
       - name: cargo build --release
         run: cargo build --release -p inferno_wasapi
+
+      - name: Build MSI with cargo wix
+        run: cargo wix --nocapture -p inferno_wasapi
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
           name: inferno_wasapi-windows-x64
           path: target/release/inferno_wasapi.exe
+          retention-days: 30
+
+      - name: Upload MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: inferno-msi
+          path: target/wix/*.msi
           retention-days: 30
 
   test:

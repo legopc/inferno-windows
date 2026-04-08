@@ -18,8 +18,14 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install WiX Toolset
+        run: choco install wixtoolset -y
+
       - name: Build release
         run: cargo build --release -p inferno_wasapi
+
+      - name: Build MSI with cargo wix
+        run: cargo wix --nocapture -p inferno_wasapi
 
       - name: Create release archive
         run: |
@@ -28,5 +34,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: inferno-windows-${{ github.ref_name }}.zip
+          files: |
+            inferno-windows-${{ github.ref_name }}.zip
+            target/wix/*.msi
           generate_release_notes: true
