@@ -35,6 +35,9 @@ pub struct ServiceState {
     pub tx_flows: Vec<FlowInfo>,
 }
 
+/// Channel for broadcasting clock mode changes ("SafeClock" or "PTP(grandmaster_ip)")
+pub type ClockModeWatcher = tokio::sync::watch::Receiver<String>;
+
 pub type SharedState = Arc<tokio::sync::RwLock<ServiceState>>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

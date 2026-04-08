@@ -945,6 +945,9 @@ async fn main() -> Result<()> {
             ..Default::default()
         }));
 
+        // Create a watch channel for clock mode updates (initialize with SafeClock)
+        let (_clock_mode_tx, _clock_mode_rx) = tokio::sync::watch::channel("SafeClock".to_string());
+
         let shutdown = Arc::new(AtomicBool::new(false));
         let shutdown_capture = shutdown.clone();
 
@@ -987,7 +990,20 @@ async fn main() -> Result<()> {
         // Spawn IPC server for tray communication
         let ipc_start_time = std::time::Instant::now();
         let (ipc_shutdown_tx, mut ipc_shutdown_rx) = tokio::sync::watch::channel(false);
-        tokio::spawn(ipc::start_ipc_server(ipc_start_time, ipc_state, ipc_shutdown_tx));
+        let ipc_state_for_clock = ipc_state.clone();
+        let mut clock_mode_rx = _clock_mode_rx;
+        tokio::spawn(ipc::start_ipc_server(ipc_start_time, ipc_state.clone(), ipc_shutdown_tx));
+
+        // Spawn task to sync clock_mode changes from the watch channel into the IPC state
+        tokio::spawn(async move {
+            loop {
+                if clock_mode_rx.changed().await.is_err() {
+                    break;
+                }
+                let new_mode = clock_mode_rx.borrow().clone();
+                ipc_state_for_clock.write().await.clock_mode = new_mode;
+            }
+        });
 
         // Spawn monitoring tasks
         let metrics = metrics::Metrics::new();
@@ -1082,8 +1098,22 @@ async fn main() -> Result<()> {
         tx_flows: vec![],
         ..Default::default()
     }));
+    // Create a watch channel for clock mode updates (initialize with SafeClock)
+    let (_clock_mode_tx, mut clock_mode_rx) = tokio::sync::watch::channel("SafeClock".to_string());
+    let ipc_state_for_clock = ipc_state.clone();
     let (ipc_shutdown_tx, mut ipc_shutdown_rx) = tokio::sync::watch::channel(false);
-    tokio::spawn(ipc::start_ipc_server(ipc_start_time, ipc_state, ipc_shutdown_tx));
+    tokio::spawn(ipc::start_ipc_server(ipc_start_time, ipc_state.clone(), ipc_shutdown_tx));
+
+    // Spawn task to sync clock_mode changes from the watch channel into the IPC state
+    tokio::spawn(async move {
+        loop {
+            if clock_mode_rx.changed().await.is_err() {
+                break;
+            }
+            let new_mode = clock_mode_rx.borrow().clone();
+            ipc_state_for_clock.write().await.clock_mode = new_mode;
+        }
+    });
 
     let channels_cb = args.channels;
     let max_queue = args.sample_rate as usize / 4 * args.channels; // 250ms buffer — sufficient for Dante latency targets
@@ -1103,6 +1133,40 @@ async fn main() -> Result<()> {
             }
         }
     })).await;
+
+    // PTP clock mode tracking (when ptp feature is enabled and listener becomes available)
+    #[cfg(feature = "ptp")]
+    {
+        // When ptp feature is enabled, this code will wire PTP grandmaster tracking.
+        // Currently a stub until s4-ptp-listener module is integrated.
+        // 
+        // TODO: Once s4-ptp-listener is available:
+        // - Call start_ptp_listener() to get a receiver of PtpOffset updates
+        // - Spawn a task that watches for sync events and updates clock_mode_tx
+        // - Format: "PTP(grandmaster_ip)" when synced, "SafeClock" on fallback after 5s timeout
+        //
+        // Example (when listener is ready):
+        // if let Some(ptp_rx) = start_ptp_listener() {
+        //     let clock_mode_tx_ptp = clock_mode_tx.clone();
+        //     tokio::spawn(async move {
+        //         let mut timeout = tokio::time::interval(Duration::from_secs(5));
+        //         loop {
+        //             tokio::select! {
+        //                 Some(ptp_offset) = ptp_rx.recv() => {
+        //                     if let Some(gm_ip) = ptp_offset.grandmaster_ip {
+        //                         let mode = format!("PTP({})", gm_ip);
+        //                         clock_mode_tx_ptp.send(mode).ok();
+        //                     }
+        //                 }
+        //                 _ = timeout.tick() => {
+        //                     clock_mode_tx_ptp.send("SafeClock".to_string()).ok();
+        //                 }
+        //             }
+        //         }
+        //     });
+        // }
+        info!("PTP feature compiled but s4-ptp-listener not yet integrated");
+    }
 
     // Spawn monitoring tasks
     let metrics = metrics::Metrics::new();

@@ -2,7 +2,7 @@
 // Binds to multicast 224.0.1.129:319 and extracts clock synchronization data
 
 use std::net::{Ipv4Addr, SocketAddrV4};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH, Duration, Instant};
 use tokio::net::UdpSocket;
 use tokio::sync::watch;
 use log::{info, warn, debug};
@@ -14,6 +14,17 @@ pub struct PtpOffset {
     pub sequence_id: u16,
     pub offset_ns: i64,   // local_recv_ns - origin_timestamp_ns
     pub recv_time: std::time::Instant,
+}
+
+/// PTP synchronization state
+#[derive(Debug, Clone, PartialEq)]
+pub enum PtpState {
+    /// Synchronized with active PTP grandmaster
+    Synced { grandmaster_id: [u8; 6] },
+    /// Grace period after losing grandmaster, transitioning to free-running
+    FallingBack,
+    /// Free-running with SafeClock (no PTP discipline)
+    FreRunning,
 }
 
 const PTP_MULTICAST: Ipv4Addr = Ipv4Addr::new(224, 0, 1, 129);

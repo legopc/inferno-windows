@@ -65,7 +65,21 @@ Wave B (after Wave A — adds to main window):
 
 ## Sprint 4 — PTPv1 In-App Clock Sync
 
-*(Pending Sprint 3 completion)*
+**Goal**: Sync to a PTPv1 grandmaster on the network without requiring external tools.
+
+Wave A (parallel — independent):
+
+| Agent ID | Model | Task | Outcome |
+|---|---|---|---|
+| `s4-ptp-listener` | claude-haiku-4.5 (Fleet Worker) | New inferno_aoip/src/ptp/mod.rs — bind UDP 319, parse PTPv1 Sync, publish offsets via watch channel | ✅ Committed |
+| `s4-ptp-clock-mode-ipc` | claude-haiku-4.5 (Fleet Worker) | Wire clock_mode IPC field to "PTP(ip)" when synced, "SafeClock" when free-running | 🔄 Running |
+
+Wave B (after Wave A — depend on ptp module):
+
+| Agent ID | Model | Task | Outcome |
+|---|---|---|---|
+| `s4-ptp-offset-ema` | claude-haiku-4.5 (Fleet Worker) | EMA filter (alpha=0.1) on PTP offsets; write to ClockOverlay shift_ns | 🔄 Running |
+| `s4-ptp-fallback` | claude-haiku-4.5 (Fleet Worker) | Fallback to SafeClock after 5s without PTP Sync; re-engage on resume | 🔄 Running |
 
 ---
 
