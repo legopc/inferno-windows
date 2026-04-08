@@ -291,6 +291,7 @@
     <ClCompile Include="..\hw.cpp" />
     <ClCompile Include="..\kshelper.cpp" />
     <ClCompile Include="..\savedata.cpp" />
+    <ClCompile Include="shm.cpp" />
     <ClCompile Include="..\tonegenerator.cpp" />
     <ClCompile Include="..\UsbHsDevice.cpp" />
     <ClCompile Include="hdmitopo.cpp" />

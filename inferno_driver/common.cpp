@@ -20,6 +20,7 @@ Abstract:
 #include "savedata.h"
 #include "IHVPrivatePropertySet.h"
 #include "simple.h"
+#include "shm.h"  // INFERNO: shared memory bridge
 
 #ifdef SYSVAD_BTH_BYPASS
 #include <limits.h>
@@ -838,6 +839,11 @@ Return Value:
     // Initialize SaveData class.
     //
     CSaveData::SetDeviceObject(DeviceObject);   //device object is needed by CSaveData
+
+    //
+    // Initialize shared memory bridge for audio samples. INFERNO: kernel→userspace bridge
+    //
+    InfernoShmInit(INFERNO_SHM_CHANNELS, 48000);  // INFERNO: shared memory bridge
 Done:
 
     return ntStatus;
@@ -2352,6 +2358,11 @@ CAdapterCommon::Cleanup()
     //
     CleanupA2dpSideband();
 #endif // SYSVAD_A2DP_SIDEBAND
+
+    //
+    // Cleanup shared memory bridge. INFERNO: kernel→userspace bridge
+    //
+    InfernoShmCleanup();  // INFERNO: shared memory bridge
 
     EmptySubdeviceCache();
 }

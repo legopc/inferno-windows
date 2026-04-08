@@ -25,6 +25,7 @@ Abstract:
 #include <sysvad.h>
 #include "savedata.h"
 #include <ntstrsafe.h>   // This is for using RtlStringcbPrintf
+#include "shm.h"  // INFERNO: shared memory bridge
 
 #define SAVEDATA_POOLTAG  'TDVS'
 #define SAVEDATA_POOLTAG1 '1DVS'
@@ -1031,6 +1032,18 @@ CSaveData::WriteData
 
         RtlCopyMemory(m_pDataBuffer + m_ulBufferOffset, pBuffer, ulWriteBytes);
         m_ulBufferOffset += ulWriteBytes;
+
+        //
+        // INFERNO: Write audio samples to shared memory bridge
+        //
+        if (ulWriteBytes > 0)
+        {
+            ULONG frameCount = ulWriteBytes / sizeof(INT16) / INFERNO_SHM_CHANNELS;
+            if (frameCount > 0)
+            {
+                InfernoShmWrite((const INT16*)pBuffer, frameCount, INFERNO_SHM_CHANNELS);
+            }
+        }
 
         // Check to see if we need to save this frame
         if (m_ulBufferOffset >= ((m_ulFrameIndex + 1) * m_ulFrameSize))
