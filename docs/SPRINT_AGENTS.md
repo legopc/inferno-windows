@@ -85,7 +85,14 @@ Wave B (after Wave A — depend on ptp module):
 
 ## Sprint 5 — SYSVAD Virtual Audio Driver
 
-*(Pending Sprint 4 completion)*
+**Goal**: A proper Windows virtual audio device that appears in sound settings.
+
+| Agent ID | Model | Task | Outcome |
+|---|---|---|---|
+| `s5-wdk-sysvad-fork` | claude-haiku-4.5 (Fleet Worker) | Verify WDK build env (VS2022+WDK installed); download + fork SYSVAD TabletAudioSample into inferno_driver/ | ✅ Committed |
+| `s5-shm-read` | claude-haiku-4.5 (Fleet Worker) | Rust shm_reader.rs: OpenFileMapping → read i16 PCM ring buffer written by SYSVAD | 🔄 Running |
+| `s5-shm-write` | claude-haiku-4.5 (Fleet Worker) | SYSVAD C++ DMA callback writes audio to Global\InfernoAudioShm named shared memory | 🔄 Running |
+| `s5-driver-testsign` | claude-haiku-4.5 (Fleet Worker) | bcdedit test-signing; self-sign .cat; install via Device Manager; record steps | ⏳ Pending fork+shm-write |
 
 ---
 

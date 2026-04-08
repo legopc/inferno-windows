@@ -30,6 +30,9 @@ pub struct Config {
     /// Latency reference in samples (default 4800 = 100ms at 48kHz)  
     #[serde(default = "Config::default_latency_ref_samples")]
     pub latency_ref_samples: u32,
+    /// Use SYSVAD driver shared memory audio source instead of WASAPI capture
+    #[serde(default)]
+    pub use_driver: bool,
 }
 
 impl Default for Config {
@@ -47,6 +50,7 @@ impl Default for Config {
             fpp: "auto".to_string(),
             rx_buffer_samples: 524288,
             latency_ref_samples: 4800,
+            use_driver: false,
         }
     }
 }
@@ -223,6 +227,7 @@ network_interface = "192.168.1.1"
 fpp = "max"
 rx_buffer_samples = 262144
 latency_ref_samples = 9600
+use_driver = true
 "#;
         let cfg: Config = toml::from_str(toml).expect("parse");
         assert_eq!(cfg.device_name, "MyDevice");
@@ -237,6 +242,7 @@ latency_ref_samples = 9600
         assert_eq!(cfg.fpp, "max");
         assert_eq!(cfg.rx_buffer_samples, 262144);
         assert_eq!(cfg.latency_ref_samples, 9600);
+        assert!(cfg.use_driver);
     }
 
     #[test]

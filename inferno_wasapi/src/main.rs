@@ -22,6 +22,7 @@ mod ipc;
 mod tray;
 mod metrics;
 mod network_health;
+mod shm_reader;
 
 pub use config::Config;
 
@@ -114,6 +115,11 @@ struct Args {
     /// Run system tray icon
     #[arg(long)]
     tray: bool,
+
+    /// Use SYSVAD driver shared memory audio source instead of WASAPI capture
+    /// (requires SYSVAD driver to be installed and running)
+    #[arg(long)]
+    use_driver: bool,
 }
 
 /// Auto-detect TX capture device: look for VB-Cable first, then Stereo Mix.
@@ -618,6 +624,132 @@ fn wasapi_capture_thread(
     info!("WASAPI loopback capture thread stopped");
 }
 
+/// Dedicated driver (SYSVAD) shared memory capture thread.
+///
+/// Reads i16 PCM samples from the shared memory section written by the SYSVAD driver,
+/// converts to 24-bit left-justified i32, de-interleaves into per-channel Vecs,
+/// and pushes to the TxPusher. Updates peak levels in the shared IPC state.
+fn driver_capture_thread(
+    channels: usize,
+    tx_pusher: Arc<Mutex<inferno_aoip::TxPusher>>,
+    shutdown: Arc<AtomicBool>,
+    ready_tx: std::sync::mpsc::SyncSender<Result<String, String>>,
+    ipc_state: ipc::SharedState,
+) {
+    use std::time::Instant;
+    
+    // Set thread priority to time-critical for low-latency audio
+    unsafe { SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL).ok(); }
+
+    let mut reader = match shm_reader::ShmReader::open() {
+        Some(r) => r,
+        None => {
+            ready_tx.send(Err("Failed to open shared memory — SYSVAD driver not running".to_string())).ok();
+            return;
+        }
+    };
+
+    let driver_channels = reader.channel_count() as usize;
+    let driver_sample_rate = reader.sample_rate();
+    
+    if driver_channels == 0 || driver_channels > 64 {
+        ready_tx.send(Err(format!("Invalid driver channel count: {}", driver_channels))).ok();
+        return;
+    }
+
+    info!("Driver audio source: {} channels, {} Hz", driver_channels, driver_sample_rate);
+    ready_tx.send(Ok(format!("SYSVAD driver: {}ch {}Hz", driver_channels, driver_sample_rate))).ok();
+
+    let mut meter = metering::ChannelMeter::new(channels);
+    let mut last_meter_log = Instant::now();
+    let mut last_stats_log = Instant::now();
+    let mut frames_captured_total = 0u64;
+
+    while !shutdown.load(Ordering::Relaxed) {
+        // Try to read samples from shared memory
+        let samples = match reader.read_samples() {
+            Some(s) => s,
+            None => {
+                // No new data or driver inactive
+                std::thread::sleep(std::time::Duration::from_millis(5));
+                continue;
+            }
+        };
+
+        // samples are interleaved i16: [L, R, L, R, ...]
+        // Calculate number of frames
+        let frames_read = if driver_channels > 0 {
+            samples.len() / driver_channels
+        } else {
+            0
+        };
+
+        if frames_read == 0 {
+            continue;
+        }
+
+        frames_captured_total += frames_read as u64;
+
+        // De-interleave i16 into per-channel i32 (convert to 24-bit left-justified)
+        let mut channel_data: Vec<Vec<i32>> = vec![Vec::with_capacity(frames_read); channels];
+        for frame in 0..frames_read {
+            for ch in 0..channels {
+                let sample = if ch < driver_channels {
+                    let offset = frame * driver_channels + ch;
+                    if offset < samples.len() {
+                        // Convert i16 to 24-bit left-justified i32 (multiply by 65536 = 2^16)
+                        let s = samples[offset] as i32;
+                        s * 65536
+                    } else {
+                        0
+                    }
+                } else {
+                    0 // pad missing channels with silence
+                };
+                channel_data[ch].push(sample);
+            }
+        }
+
+        // Update peak meters for each channel
+        for ch in 0..channels {
+            meter.update_i32(ch, &channel_data[ch]);
+        }
+
+        tx_pusher.lock().unwrap().push_channels(&channel_data);
+
+        // Periodic metering log every 5 seconds
+        if last_meter_log.elapsed().as_secs() >= 5 {
+            let peaks = meter.get_peaks();
+            info!(peaks = ?peaks, "Audio peak levels (0-255 Dante scale)");
+
+            // Convert peaks from Dante scale (0-255) to dB (-90..0) for IPC
+            let peaks_db: Vec<f32> = peaks.iter().map(|&p| {
+                if p == 0 {
+                    -90.0
+                } else {
+                    (p as f32 * 90.0 / 255.0) - 90.0
+                }
+            }).collect();
+
+            // Update IPC state with current peak levels
+            let ipc = ipc_state.try_write();
+            if let Ok(mut state) = ipc {
+                state.tx_peak_db = peaks_db;
+            }
+
+            meter.decay();
+            last_meter_log = Instant::now();
+        }
+
+        if last_stats_log.elapsed().as_secs() >= 10 {
+            info!("SYSVAD driver: frames={frames_captured_total}");
+            last_stats_log = Instant::now();
+        }
+    }
+
+    info!("SYSVAD driver capture thread stopped");
+}
+
 /// Ensure firewall rules are set for Dante AoIP ports (UDP 4440, 4455, 5353, 8700, 8800)
 fn ensure_firewall_rules() {
     let ports = [4440u16, 4455, 5353, 8700, 8800];
@@ -972,19 +1104,45 @@ async fn main() -> Result<()> {
         };
         
         let ipc_state_capture = ipc_state.clone();
-        let capture_thread = std::thread::Builder::new()
-            .name("wasapi-capture".into())
-            .spawn(move || {
-                wasapi_capture_thread(
-                    tx_device, sample_rate, tx_channels,
-                    tx_pusher, shutdown_capture, ready_tx, ipc_state_capture,
-                );
-            })?;
+        
+        // Choose capture thread based on use_driver flag
+        let capture_thread = if args.use_driver {
+            info!("Using SYSVAD driver audio source");
+            std::thread::Builder::new()
+                .name("driver-capture".into())
+                .spawn(move || {
+                    driver_capture_thread(
+                        tx_channels,
+                        tx_pusher, shutdown_capture, ready_tx, ipc_state_capture,
+                    );
+                })?
+        } else {
+            std::thread::Builder::new()
+                .name("wasapi-capture".into())
+                .spawn(move || {
+                    wasapi_capture_thread(
+                        tx_device, sample_rate, tx_channels,
+                        tx_pusher, shutdown_capture, ready_tx, ipc_state_capture,
+                    );
+                })?
+        };
 
         match ready_rx.recv() {
-            Ok(Ok(dev_name)) => info!("WASAPI loopback capture ready: {dev_name}"),
-            Ok(Err(e)) => return Err(anyhow!("WASAPI loopback init failed: {e}")),
-            Err(_) => return Err(anyhow!("WASAPI capture thread died before signalling ready")),
+            Ok(Ok(dev_name)) => {
+                if args.use_driver {
+                    info!("SYSVAD driver source ready: {dev_name}");
+                } else {
+                    info!("WASAPI loopback capture ready: {dev_name}");
+                }
+            },
+            Ok(Err(e)) => {
+                let source = if args.use_driver { "SYSVAD driver" } else { "WASAPI loopback" };
+                return Err(anyhow!("{} init failed: {e}", source));
+            },
+            Err(_) => {
+                let source = if args.use_driver { "SYSVAD driver" } else { "WASAPI" };
+                return Err(anyhow!("{} capture thread died before signalling ready", source));
+            },
         }
 
         // Spawn IPC server for tray communication
