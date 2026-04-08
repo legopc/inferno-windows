@@ -184,3 +184,129 @@ fn parse_ptp_sync(buffer: &[u8], _last_gm: Option<[u8; 6]>) -> Option<PtpOffset>
         recv_time: std::time::Instant::now(),
     })
 }
+
+/// Drive PTP clock discipline: EMA-filter incoming offsets and write to ClockOverlay sender.
+/// 
+/// This function applies an exponential moving average (EMA) filter to raw PTP offset measurements
+/// and sends the filtered result to the clock overlay channel. The filtered offset becomes the
+/// clock shift value used to discipline the media clock.
+/// 
+/// # Arguments
+/// * `offset_rx` - Watch receiver for raw PTP offsets from the listener
+/// * `overlay_tx` - Watch sender for filtered ClockOverlay updates (with offset as shift)
+/// * `shutdown` - Broadcast receiver for shutdown signal
+/// 
+/// # Parameters
+/// * `alpha=0.1` - EMA smoothing factor (gives ~10-sample smoothing window)
+/// 
+/// # Example
+/// ```ignore
+/// let (offset_tx, offset_rx) = watch::channel(None);
+/// let (overlay_tx, _overlay_rx) = watch::channel(None);
+/// let (_shutdown_tx, shutdown_rx) = broadcast::channel(1);
+/// 
+/// tokio::spawn(run_ptp_discipline(offset_rx, overlay_tx, shutdown_rx));
+/// ```
+#[cfg(feature = "ptp")]
+pub async fn run_ptp_discipline(
+    mut offset_rx: watch::Receiver<Option<PtpOffset>>,
+    overlay_tx: watch::Sender<Option<usrvclock::ClockOverlay>>,
+    mut shutdown: tokio::sync::broadcast::Receiver<bool>,
+) {
+    const ALPHA: f64 = 0.1;  // EMA smoothing factor (~10-sample window)
+    let mut ema_offset_ns: f64 = 0.0;
+    let mut initialized = false;
+
+    loop {
+        tokio::select! {
+            _ = shutdown.recv() => {
+                info!("PTP discipline task shutdown");
+                break;
+            }
+            _ = offset_rx.changed() => {
+                if let Some(ptp) = offset_rx.borrow().clone() {
+                    if !initialized {
+                        ema_offset_ns = ptp.offset_ns as f64;
+                        initialized = true;
+                        info!("PTP discipline initialized with offset: {}ns", ptp.offset_ns);
+                    } else {
+                        ema_offset_ns = ALPHA * (ptp.offset_ns as f64) + (1.0 - ALPHA) * ema_offset_ns;
+                    }
+
+                    let shift_ns = ema_offset_ns as i64;
+
+                    // Create a ClockOverlay with the filtered offset as the shift
+                    let overlay = usrvclock::ClockOverlay {
+                        clock_id: 0,
+                        last_sync: SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .map(|d| d.as_nanos() as i64)
+                            .unwrap_or(0),
+                        shift: shift_ns,
+                        freq_scale: 0.0,
+                    };
+
+                    if let Err(e) = overlay_tx.send(Some(overlay)) {
+                        warn!("Failed to send PTP discipline overlay: {}", e);
+                        break;
+                    }
+
+                    debug!("PTP offset EMA: {}ns (raw: {}ns, alpha: {})", shift_ns, ptp.offset_ns, ALPHA);
+                }
+            }
+        }
+    }
+}
+
+/// Monitor PTP discipline and manage fallback to SafeClock.
+///
+/// Tracks the last PTP Sync message reception time. If no Sync is received for
+/// >5 seconds, transitions to FreRunning (SafeClock mode) and resets clock overlay.
+/// When Sync messages resume, re-engages PTP discipline.
+///
+/// # Arguments
+/// * `offset_rx` - watch receiver for incoming PtpOffset messages
+/// * `state_tx` - watch sender to publish PTP state changes
+/// * `shutdown` - broadcast receiver for shutdown signal
+#[cfg(feature = "ptp")]
+pub async fn run_ptp_fallback_monitor(
+    mut offset_rx: tokio::sync::watch::Receiver<Option<PtpOffset>>,
+    state_tx: tokio::sync::watch::Sender<PtpState>,
+    mut shutdown: tokio::sync::broadcast::Receiver<bool>,
+) {
+    let mut last_recv = Instant::now();
+    let mut current_state = PtpState::FreRunning;
+    let mut interval = tokio::time::interval(Duration::from_secs(1));
+
+    loop {
+        tokio::select! {
+            _ = shutdown.recv() => {
+                debug!("PTP fallback monitor shutting down");
+                break;
+            }
+            _ = interval.tick() => {
+                // Check for timeout: no Sync for >5 seconds
+                if current_state != PtpState::FreRunning 
+                    && last_recv.elapsed() > Duration::from_secs(5) 
+                {
+                    info!("PTP grandmaster lost, falling back to SafeClock");
+                    current_state = PtpState::FreRunning;
+                    let _ = state_tx.send(current_state.clone());
+                    // Caller handles clock overlay reset via state watch
+                }
+            }
+            _ = offset_rx.changed() => {
+                if let Some(ptp) = offset_rx.borrow().clone() {
+                    last_recv = Instant::now();
+                    let was_free = current_state == PtpState::FreRunning;
+                    current_state = PtpState::Synced { grandmaster_id: ptp.grandmaster_id };
+                    if was_free {
+                        info!("PTP grandmaster resumed (id={:02x?}), re-engaging PTP discipline",
+                              ptp.grandmaster_id);
+                    }
+                    let _ = state_tx.send(current_state.clone());
+                }
+            }
+        }
+    }
+}
