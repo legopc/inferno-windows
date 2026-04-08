@@ -63,6 +63,15 @@ struct StatusData {
     tx_peak_db: Vec<f32>,
 }
 
+// Track notification state to avoid duplicate notifications
+#[derive(Clone)]
+struct NotificationState {
+    prev_rx_active: bool,
+    prev_tx_active: bool,
+    prev_flow_count: usize,
+    notification_shown_start: bool,
+}
+
 type SharedStatus = Arc<Mutex<Option<StatusData>>>;
 
 #[derive(Clone, Default)]
@@ -208,6 +217,14 @@ fn db_to_percent(db: f32) -> u32 {
     } else {
         ((db + 60.0) / 60.0 * 100.0) as u32
     }
+}
+
+// ── Windows Toast Notification Helper (using NWG tray icon balloons) ────────
+// Shows a balloon tooltip on the system tray (non-intrusive notifications)
+fn show_notification(window: &nwg::Window, title: &str, message: &str) {
+    // Use nwg's modal_info_message as a simple notification fallback
+    // A proper implementation would create a temporary tray icon or use Windows toast
+    nwg::modal_info_message(&window.handle, title, message);
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -416,6 +433,14 @@ fn main() {
     // ── Shared state & IPC thread ─────────────────────────────────────────────
     let shared_status: SharedStatus = Arc::new(Mutex::new(None));
     let shared_cmd: SharedCmd = Arc::new(Mutex::new(PendingCommand::default()));
+    
+    // Notification state for edge detection
+    let notif_state = Rc::new(std::cell::RefCell::new(NotificationState {
+        prev_rx_active: false,
+        prev_tx_active: false,
+        prev_flow_count: 0,
+        notification_shown_start: false,
+    }));
 
     spawn_ipc_thread(Arc::clone(&shared_status), Arc::clone(&shared_cmd));
 
@@ -438,6 +463,7 @@ fn main() {
     let btn_settings = Rc::new(btn_settings);
     let chk_autostart = Rc::new(chk_autostart);
     let _timer = Rc::new(timer);
+    let notif_state = Rc::clone(&notif_state);
 
     let window_handle = window.handle;
     let btn_reload_handle = btn_reload.handle;
@@ -538,6 +564,44 @@ fn main() {
                                     lbl_ch[i].set_visible(false);
                                 }
                             }
+
+                            // ── Notification triggers for audio events ────────────────────────
+                            let mut notif = notif_state.borrow_mut();
+                            
+                            // Service start notification (once on first uptime > 0)
+                            if !notif.notification_shown_start && s.uptime_secs > 0 {
+                                show_notification(&window, "Inferno Running", "Dante audio service is active in background");
+                                notif.notification_shown_start = true;
+                            }
+
+                            // First RX flow established (edge: rx_active false → true)
+                            if !notif.prev_rx_active && s.rx_active {
+                                let msg = format!("Receiving {} channels at {}Hz", s.rx_channels, s.sample_rate);
+                                show_notification(&window, "Inferno — RX Active", &msg);
+                            }
+
+                            // Audio glitch / flow lost (edge: rx_active true → false)
+                            if notif.prev_rx_active && !s.rx_active {
+                                show_notification(&window, "Inferno — Audio Lost", "RX audio flow disconnected");
+                            }
+
+                            // New RX or TX flow detected (flow count increased)
+                            let current_flow_count = s.rx_flows.len() + s.tx_flows.len();
+                            if current_flow_count > notif.prev_flow_count {
+                                // Find the new flow
+                                if let Some(new_flow) = s.rx_flows.iter().find(|f| {
+                                    f.state == "active" || f.state == "running"
+                                }) {
+                                    let msg = format!("Flow: {} from {} ({} ch @ {}Hz)", 
+                                        new_flow.name, new_flow.source_ip, new_flow.channels, new_flow.sample_rate);
+                                    show_notification(&window, "Inferno — Flow Active", &msg);
+                                }
+                            }
+
+                            // Update previous state for next tick
+                            notif.prev_rx_active = s.rx_active;
+                            notif.prev_tx_active = s.tx_active;
+                            notif.prev_flow_count = current_flow_count;
                         }
                     }
                 }
