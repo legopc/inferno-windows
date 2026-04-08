@@ -1,0 +1,16 @@
+[package]
+name = "inferno_gui"
+version = "0.1.0"
+edition = "2021"
+description = "Status and configuration GUI for Inferno AoIP"
+
+[[bin]]
+name = "inferno_gui"
+path = "src/main.rs"
+
+[dependencies]
+eframe = { version = "0.27", default-features = false, features = ["wgpu", "accesskit"] }
+egui = "0.27"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "macros", "net", "io-util", "time", "sync"] }

@@ -31,6 +31,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
+use if_addrs;
 
 use inferno_aoip::device_server::{DeviceServer, Settings};
 use windows::Win32::System::Threading::{GetCurrentThread, SetThreadPriority, THREAD_PRIORITY_TIME_CRITICAL};
@@ -672,8 +673,17 @@ async fn main() -> Result<()> {
 
     if args.list_interfaces {
         println!("Available network interfaces:");
+        match if_addrs::get_if_addrs() {
+            Ok(ifaces) => {
+                for iface in ifaces {
+                    if !iface.is_loopback() {
+                        println!("  {} — {}", iface.name, iface.ip());
+                    }
+                }
+            }
+            Err(e) => println!("  (error enumerating interfaces: {})", e),
+        }
         println!("  (Set network_interface in config.toml to select one)");
-        println!("  To find interface IPs: ipconfig /all");
         return Ok(());
     }
 
