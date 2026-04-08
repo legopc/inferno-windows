@@ -72,7 +72,7 @@ impl FlowsControlClient {
     content: &[u8],
   ) -> Result<req_resp_packet::View<&'a [u8]>, Box<dyn Error>> {
     let send_seqnum = self.seqnum.fetch_add(1, Ordering::AcqRel);
-    let pkt_to_send = make_packet(recvbuf, /*start_code*/ 0x1102, send_seqnum, opcode1, 0, content);
+    let pkt_to_send = make_packet(recvbuf, /*start_code*/ 0x1102, send_seqnum, opcode1, 0, content)?;
     socket.send(pkt_to_send).await?;
     let deadline = Instant::now() + Duration::from_secs(3);
     loop {
@@ -146,7 +146,10 @@ impl FlowsControlClient {
       body.write_u16(self.self_info.process_id); // XXX testing
     } */
     body.write_bytes(&[0; 12]); // XXX testing
-    assert_eq!(body.get_wpos(), strings_offset - HEADER_LENGTH);
+    if body.get_wpos() != strings_offset - HEADER_LENGTH {
+      error!("flow control packet body write position mismatch: expected {}, got {}", strings_offset - HEADER_LENGTH, body.get_wpos());
+      return Err(Box::new(std::io::Error::from(ErrorKind::InvalidData)));
+    }
     body.write_bytes(strings.as_bytes());
 
     let mut recvbuf = [0; MTU];

@@ -25,10 +25,15 @@ pub fn make_packet<'a>(
   vendor_str: [u8; 8],
   opcode: [u8; 8],
   content: &[u8],
-) -> &'a [u8] {
+) -> Result<&'a [u8], &'static str> {
   let total_len = content.len() + HEADER_LENGTH;
-  assert!(total_len <= (1 << 16)); // TODO MAY PANIC
-  let buffer = &mut buffer[..total_len]; // TODO MAY PANIC check length before slicing
+  if total_len > (1 << 16) {
+    return Err("packet payload too large (exceeds u16 max)");
+  }
+  if buffer.len() < total_len {
+    return Err("buffer too small for packet");
+  }
+  let buffer = &mut buffer[..total_len];
   let mut view = mcast_packet::View::new(buffer);
   view.start_code_mut().write(start_code);
   view.total_length_mut().write(total_len as u16);
@@ -38,7 +43,7 @@ pub fn make_packet<'a>(
   view.vendor_mut().copy_from_slice(&vendor_str);
   view.opcode_mut().copy_from_slice(&opcode);
   view.content_mut().copy_from_slice(&content);
-  return view.into_storage();
+  return Ok(view.into_storage());
 }
 
 
@@ -50,7 +55,7 @@ pub struct MulticastMessage {
 
 pub fn make_channel_change_notification(
   channel_indices: impl IntoIterator<Item = usize>,
-) -> MulticastMessage {
+) -> Option<MulticastMessage> {
   let mut content = vec![0u8; 3];
   let offset = 2;
   for ch in channel_indices {
@@ -61,8 +66,8 @@ pub fn make_channel_change_notification(
     }
     content[byte + offset] |= 1 << bit;
   }
-  let mask_len = (content.len() - 2).try_into().unwrap();
+  let mask_len: u16 = (content.len() - 2).try_into().ok()?;
   content[0] = H(mask_len);
   content[1] = L(mask_len);
-  MulticastMessage { start_code: 0xffff, opcode: [0x07, 0x2a, 1, 2, 0, 0, 0, 0], content }
+  Some(MulticastMessage { start_code: 0xffff, opcode: [0x07, 0x2a, 1, 2, 0, 0, 0, 0], content })
 }

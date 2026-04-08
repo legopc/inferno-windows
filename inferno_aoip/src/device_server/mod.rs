@@ -32,7 +32,6 @@ pub(crate) mod info_mcast_server;
 pub(crate) mod mdns_server;
 
 pub(crate) mod channels_subscriber;
-pub(crate) mod drop_channel;
 pub(crate) mod flows_rx;
 pub(crate) mod flows_tx;
 mod peaks;
@@ -270,7 +269,6 @@ impl DeviceServer {
       srx1,
       current_timestamp,
       on_transfer,
-      self.drop_sender.clone(),
     );
     let flows_rx_handle = Arc::new(flows_rx_handle);
     let (channels_sub_handle, channels_sub_worker) = ChannelsSubscriber::new(
@@ -339,7 +337,6 @@ impl DeviceServer {
       start_time_rx,
       current_timestamp.clone(),
       on_transfer,
-      self.drop_sender.clone(),
     );
     flows_tx_handle.load_state().await.log_and_forget();
     *self.flows_tx.lock().await = Some(flows_tx_handle);

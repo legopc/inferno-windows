@@ -41,10 +41,15 @@ pub fn make_packet<'a>(
   opcode1: u16,
   opcode2: u16,
   content: &[u8],
-) -> &'a [u8] {
+) -> Result<&'a [u8], &'static str> {
   let total_len = content.len() + HEADER_LENGTH;
-  assert!(total_len < (1 << 16)); // TODO MAY PANIC
-  let buffer = &mut buf[..total_len]; // TODO MAY PANIC check length before slicing
+  if total_len >= (1 << 16) {
+    return Err("packet payload too large (exceeds u16 max)");
+  }
+  if buf.len() < total_len {
+    return Err("buffer too small for packet");
+  }
+  let buffer = &mut buf[..total_len];
   let mut view = req_resp_packet::View::new(buffer);
   view.start_code_mut().write(start_code);
   view.total_length_mut().write(total_len as u16);
@@ -52,7 +57,7 @@ pub fn make_packet<'a>(
   view.opcode1_mut().write(opcode1);
   view.opcode2_mut().write(opcode2);
   view.content_mut().copy_from_slice(&content);
-  return view.into_storage();
+  return Ok(view.into_storage());
 }
 
 impl Connection {
@@ -94,23 +99,31 @@ impl Connection {
     opcode2: u16,
     content: &[u8],
   ) {
-    let pkt = make_packet(&mut self.send_buff, start_code, seqnum, opcode1, opcode2, content);
-    self.server.send(&dst, pkt).await;
+    match make_packet(&mut self.send_buff, start_code, seqnum, opcode1, opcode2, content) {
+      Ok(pkt) => self.server.send(&dst, pkt).await,
+      Err(e) => error!("failed to make packet: {}", e),
+    }
   }
   pub async fn respond(&mut self, payload: &[u8]) {
     self.respond_with_code(1, payload).await;
   }
   pub async fn respond_with_code(&mut self, opcode2: u16, content: &[u8]) {
-    let rem = self.remote.as_ref().unwrap();
-    self.send(rem.addr, rem.start_code, rem.seqnum, rem.opcode1, opcode2, content).await;
+    match self.remote.as_ref() {
+      Some(rem) => self.send(rem.addr, rem.start_code, rem.seqnum, rem.opcode1, opcode2, content).await,
+      None => error!("tried to respond with no remote info"),
+    }
   }
   pub async fn respond_cmc(&mut self, payload: &[u8]) {
     self.respond_cmc_with_code(1, payload).await;
   }
   pub async fn respond_cmc_with_code(&mut self, opcode2: u16, content: &[u8]) {
-    let rem = self.remote.as_ref().unwrap();
-    // CMC responses must use start code 0x1200 instead of echoing back the request
-    self.send(rem.addr, 0x1200, rem.seqnum, rem.opcode1, opcode2, content).await;
+    match self.remote.as_ref() {
+      Some(rem) => {
+        // CMC responses must use start code 0x1200 instead of echoing back the request
+        self.send(rem.addr, 0x1200, rem.seqnum, rem.opcode1, opcode2, content).await;
+      }
+      None => error!("tried to respond_cmc with no remote info"),
+    }
   }
   pub async fn respond_with_struct(&mut self, code: u16, payload: impl BinarySerde) {
     self.respond_with_code(code, payload.binary_serialize_to_array(binary_serde::Endianness::Big).as_slice()).await;

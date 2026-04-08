@@ -324,7 +324,10 @@ pub fn serialize_items<InItem, OutItem>(
     actual_items += 1;
   }
   bytes.set_wpos(1 + HEADER_LENGTH);
-  bytes.write_u8(actual_items.try_into().unwrap());
+  bytes.write_u8(actual_items.try_into().unwrap_or_else(|_| {
+    error!("actual_items exceeds u8 max");
+    255
+  }));
   (have_more, bytes.as_bytes()[HEADER_LENGTH..].into())
 }
 
