@@ -104,7 +104,6 @@ pub struct DeviceServer {
   tx_multicasts_by_channel: Arc<RwLock<BTreeMap<usize, PointerToMulticast>>>,
   rx_peaks_supplier: Arc<RwLock<Box<dyn Fn() -> Vec<u8> + Send + Sync>>>,
   tx_peaks_supplier: Arc<RwLock<Box<dyn Fn() -> Vec<u8> + Send + Sync>>>,
-  drop_sender: drop_channel::RealTimeDropSender,
   shutdown_todo: Pin<Box<dyn Future<Output = ()> + Send>>,
   tx_shutdown_todo: Option<Pin<Box<dyn Future<Output = ()> + Send>>>,
   rx_shutdown_todo: Option<Pin<Box<dyn Future<Output = ()> + Send>>>,
@@ -136,9 +135,6 @@ impl DeviceServer {
     info!("waiting for clock");
     let shared_media_clock = make_shared_media_clock(&clock_receiver, settings.use_safe_clock).await;
     info!("clock ready");
-
-    // Spawn background drop handler for RT thread deallocation
-    let drop_sender = drop_channel::spawn_drop_handler();
 
     let mut tasks = vec![];
 
@@ -204,7 +200,6 @@ impl DeviceServer {
       tx_multicasts_by_channel,
       rx_peaks_supplier,
       tx_peaks_supplier,
-      drop_sender,
       //tasks,
       //tx_inputs,
       shutdown_todo,
