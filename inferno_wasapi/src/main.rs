@@ -116,6 +116,42 @@ struct Args {
     tray: bool,
 }
 
+/// Auto-detect TX capture device: look for VB-Cable first, then Stereo Mix.
+/// Returns None if neither is found.
+fn find_tx_device() -> Option<String> {
+    use wasapi::*;
+    let _ = initialize_mta();
+    
+    let collection = match DeviceCollection::new(&Direction::Render) {
+        Ok(c) => c,
+        Err(_) => return None,
+    };
+    
+    // First pass: look for VB-Cable "CABLE Input"
+    for dev in &collection {
+        if let Ok(d) = dev {
+            if let Ok(name) = d.get_friendlyname() {
+                if name.contains("CABLE Input") {
+                    return Some(name);
+                }
+            }
+        }
+    }
+    
+    // Second pass: look for "Stereo Mix"
+    for dev in &collection {
+        if let Ok(d) = dev {
+            if let Ok(name) = d.get_friendlyname() {
+                if name.contains("Stereo Mix") {
+                    return Some(name);
+                }
+            }
+        }
+    }
+    
+    None
+}
+
 fn list_wasapi_devices() -> Result<()> {
     use wasapi::*;
     let _ = initialize_mta();
@@ -398,6 +434,7 @@ fn wasapi_render_thread(
 /// Captures whatever is playing on the given render device using
 /// WASAPI loopback, converts samples to 24-bit left-justified i32,
 /// de-interleaves into per-channel Vecs, and pushes to the TxPusher.
+/// Updates peak levels in the shared IPC state.
 fn wasapi_capture_thread(
     device_filter: Option<String>,
     _sample_rate: u32,
@@ -405,6 +442,7 @@ fn wasapi_capture_thread(
     tx_pusher: Arc<Mutex<inferno_aoip::TxPusher>>,
     shutdown: Arc<AtomicBool>,
     ready_tx: std::sync::mpsc::SyncSender<Result<String, String>>,
+    ipc_state: ipc::SharedState,
 ) {
     use wasapi::*;
     let _ = initialize_mta();
@@ -550,6 +588,22 @@ fn wasapi_capture_thread(
         if last_meter_log.elapsed().as_secs() >= 5 {
             let peaks = meter.get_peaks();
             info!(peaks = ?peaks, "Audio peak levels (0-255 Dante scale)");
+            
+            // Convert peaks from Dante scale (0-255) to dB (-90..0) for IPC
+            let peaks_db: Vec<f32> = peaks.iter().map(|&p| {
+                if p == 0 {
+                    -90.0
+                } else {
+                    (p as f32 * 90.0 / 255.0) - 90.0
+                }
+            }).collect();
+            
+            // Update IPC state with current peak levels
+            let ipc = ipc_state.try_write();
+            if let Ok(mut state) = ipc {
+                state.tx_peak_db = peaks_db;
+            }
+            
             meter.decay();
             last_meter_log = std::time::Instant::now();
         }
@@ -877,19 +931,50 @@ async fn main() -> Result<()> {
         let tx_pusher = server.transmit_with_push(args.tx_channels).await;
         let tx_pusher = Arc::new(Mutex::new(tx_pusher));
 
+        // Initialize IPC state with TX configuration
+        let ipc_state: ipc::SharedState = Arc::new(tokio::sync::RwLock::new(ipc::ServiceState {
+            rx_active: false,
+            tx_active: true,
+            rx_channels: 0,
+            tx_channels: args.tx_channels as u32,
+            sample_rate: args.sample_rate,
+            clock_mode: "SafeClock".to_string(),
+            tx_peak_db: vec![0.0; args.tx_channels],
+            rx_flows: vec![],
+            tx_flows: vec![],
+            ..Default::default()
+        }));
+
         let shutdown = Arc::new(AtomicBool::new(false));
         let shutdown_capture = shutdown.clone();
 
         let (ready_tx, ready_rx) = std::sync::mpsc::sync_channel(1);
         let tx_channels = args.tx_channels;
         let sample_rate = args.sample_rate;
-        let tx_device = args.tx_device.clone();
+        
+        // Auto-detect TX device if not specified
+        let tx_device = if let Some(ref dev) = args.tx_device {
+            Some(dev.clone())
+        } else {
+            match find_tx_device() {
+                Some(device_name) => {
+                    info!("TX auto-detected capture device: {}", device_name);
+                    Some(device_name)
+                }
+                None => {
+                    warn!("TX mode: no capture device found. Install VB-Cable (https://vb-audio.com/Cable/) or enable Stereo Mix in Windows sound settings, then set tx_device in config.toml or use --tx-device");
+                    None
+                }
+            }
+        };
+        
+        let ipc_state_capture = ipc_state.clone();
         let capture_thread = std::thread::Builder::new()
             .name("wasapi-capture".into())
             .spawn(move || {
                 wasapi_capture_thread(
                     tx_device, sample_rate, tx_channels,
-                    tx_pusher, shutdown_capture, ready_tx,
+                    tx_pusher, shutdown_capture, ready_tx, ipc_state_capture,
                 );
             })?;
 
@@ -899,14 +984,25 @@ async fn main() -> Result<()> {
             Err(_) => return Err(anyhow!("WASAPI capture thread died before signalling ready")),
         }
 
+        // Spawn IPC server for tray communication
+        let ipc_start_time = std::time::Instant::now();
+        let (ipc_shutdown_tx, mut ipc_shutdown_rx) = tokio::sync::watch::channel(false);
+        tokio::spawn(ipc::start_ipc_server(ipc_start_time, ipc_state, ipc_shutdown_tx));
+
         // Spawn monitoring tasks
         let metrics = metrics::Metrics::new();
         tokio::spawn(metrics::serve_metrics(metrics.clone()));
         tokio::spawn(network_health::run_health_monitor());
 
         info!("Streaming WASAPI loopback → Dante. Press Ctrl+C to stop.");
-        tokio::signal::ctrl_c().await.ok();
-        info!("Ctrl+C received, shutting down TX");
+        tokio::select! {
+            _ = tokio::signal::ctrl_c() => {
+                info!("Ctrl+C received, shutting down TX");
+            }
+            res = ipc_shutdown_rx.changed() => {
+                if res.is_ok() { info!("IPC shutdown received"); }
+            }
+        }
 
         shutdown.store(true, Ordering::Relaxed);
         server.stop_transmitter().await;
