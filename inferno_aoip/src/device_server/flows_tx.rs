@@ -504,13 +504,12 @@ impl FlowsTransmitter {
     let (tx, rx) = mpsc::channel(100);
     let tx1 = tx.clone();
     let srate = self_info.sample_rate;
-    // TODO dehardcode latency_ns
     let thread_join = run_future_in_new_thread("flows TX", move || {
       Self::run(
         rx,
         clock_recv,
         srate,
-        0, /*LATENCY TODO*/
+        tx_latency_ns,
         // we set max_lag_samples to tx latency because it doesn't make sense to send samples older than that
         (tx_latency_ns as u64 * srate as u64 / 1_000_000_000u64).try_into().unwrap(),
         channels_outputs,
