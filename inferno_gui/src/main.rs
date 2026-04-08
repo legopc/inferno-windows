@@ -156,7 +156,7 @@ fn main() {
     // ── Build window ──────────────────────────────────────────────────────────
     let mut window: nwg::Window = Default::default();
     nwg::Window::builder()
-        .size((420, 260))
+        .size((420, 300))
         .position((300, 300))
         .title("Inferno AoIP")
         .build(&mut window)
@@ -208,6 +208,16 @@ fn main() {
         .build(&mut lbl_uptime)
         .unwrap();
 
+    // ── Peers label ───────────────────────────────────────────────────────────
+    let mut lbl_peers: nwg::Label = Default::default();
+    nwg::Label::builder()
+        .text("Peers: \u{2014}")
+        .position((10, 165))
+        .size((400, 20))
+        .parent(&window)
+        .build(&mut lbl_peers)
+        .unwrap();
+
     // ── Buttons ───────────────────────────────────────────────────────────────
     let mut btn_reload: nwg::Button = Default::default();
     nwg::Button::builder()
@@ -226,6 +236,34 @@ fn main() {
         .parent(&window)
         .build(&mut btn_shutdown)
         .unwrap();
+
+    let mut btn_view_logs: nwg::Button = Default::default();
+    nwg::Button::builder()
+        .text("View Logs")
+        .position((310, 200))
+        .size((100, 30))
+        .parent(&window)
+        .build(&mut btn_view_logs)
+        .unwrap();
+
+    // ── Autostart checkbox ────────────────────────────────────────────────────
+    let mut chk_autostart: nwg::CheckBox = Default::default();
+    nwg::CheckBox::builder()
+        .text("Launch on Windows start")
+        .position((10, 240))
+        .size((200, 20))
+        .parent(&window)
+        .build(&mut chk_autostart)
+        .unwrap();
+
+    // Set initial checkbox state based on whether the .bat file already exists.
+    let startup_bat_path = format!(
+        "{}\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\InfernoAoIP.bat",
+        std::env::var("APPDATA").unwrap_or_default()
+    );
+    if std::path::Path::new(&startup_bat_path).exists() {
+        chk_autostart.set_check_state(nwg::CheckBoxState::Checked);
+    }
 
     // ── Timer ─────────────────────────────────────────────────────────────────
     let mut timer: nwg::AnimationTimer = Default::default();
@@ -249,13 +287,18 @@ fn main() {
     let lbl_channels = Rc::new(lbl_channels);
     let lbl_clock = Rc::new(lbl_clock);
     let lbl_uptime = Rc::new(lbl_uptime);
+    let lbl_peers = Rc::new(lbl_peers);
     let btn_reload = Rc::new(btn_reload);
     let btn_shutdown = Rc::new(btn_shutdown);
+    let btn_view_logs = Rc::new(btn_view_logs);
+    let chk_autostart = Rc::new(chk_autostart);
     let _timer = Rc::new(timer);
 
     let window_handle = window.handle;
     let btn_reload_handle = btn_reload.handle;
     let btn_shutdown_handle = btn_shutdown.handle;
+    let btn_view_logs_handle = btn_view_logs.handle;
+    let chk_autostart_handle = chk_autostart.handle;
 
     let handler = nwg::full_bind_event_handler(
         &window_handle,
@@ -264,7 +307,20 @@ fn main() {
             match evt {
                 E::OnWindowClose => {
                     if handle == window_handle {
-                        nwg::stop_thread_dispatch();
+                        let choice = nwg::modal_message(
+                            &window_handle,
+                            &nwg::MessageParams {
+                                title: "Inferno AoIP",
+                                content: "Minimize to background instead of quitting?",
+                                buttons: nwg::MessageButtons::YesNo,
+                                icons: nwg::MessageIcons::Question,
+                            },
+                        );
+                        if choice == nwg::MessageChoice::Yes {
+                            window.set_visible(false);
+                        } else {
+                            nwg::stop_thread_dispatch();
+                        }
                     }
                 }
                 E::OnTimerTick => {
@@ -272,10 +328,11 @@ fn main() {
                     match snapshot {
                         None => {
                             lbl_status.set_text("Status: Service not running");
-                            lbl_rate.set_text("Sample Rate: —");
-                            lbl_channels.set_text("Channels: —");
-                            lbl_clock.set_text("Clock: —");
-                            lbl_uptime.set_text("Uptime: —");
+                            lbl_rate.set_text("Sample Rate: \u{2014}");
+                            lbl_channels.set_text("Channels: \u{2014}");
+                            lbl_clock.set_text("Clock: \u{2014}");
+                            lbl_uptime.set_text("Uptime: \u{2014}");
+                            lbl_peers.set_text("Peers: \u{2014}");
                         }
                         Some(s) => {
                             let rx = if s.rx_active { "RX Active" } else { "RX Idle" };
@@ -287,6 +344,8 @@ fn main() {
                             lbl_clock.set_text(&format!("Clock: {}", s.clock_mode));
                             lbl_uptime
                                 .set_text(&format!("Uptime: {}", format_uptime(s.uptime_secs)));
+                            // Placeholder — real peers arrive via IPC once dante_peers field is added
+                            lbl_peers.set_text("Peers: (discovering...)");
                         }
                     }
                 }
@@ -295,6 +354,38 @@ fn main() {
                         shared_cmd.lock().unwrap().reload = true;
                     } else if handle == btn_shutdown_handle {
                         shared_cmd.lock().unwrap().shutdown = true;
+                    } else if handle == btn_view_logs_handle {
+                        let log_path = format!(
+                            "{}\\inferno_aoip\\logs\\inferno.log",
+                            std::env::var("LOCALAPPDATA").unwrap_or_default()
+                        );
+                        let content = std::fs::read_to_string(&log_path)
+                            .unwrap_or_else(|_| "Log file not found".to_string());
+                        let lines: Vec<&str> = content.lines().collect();
+                        let tail: String = lines
+                            .iter()
+                            .rev()
+                            .take(50)
+                            .rev()
+                            .cloned()
+                            .collect::<Vec<_>>()
+                            .join("\n");
+                        nwg::modal_info_message(&window_handle, "Inferno Logs", &tail);
+                    } else if handle == chk_autostart_handle {
+                        let startup_dir = format!(
+                            "{}\\Microsoft\\Windows\\Start Menu\\Programs\\Startup",
+                            std::env::var("APPDATA").unwrap_or_default()
+                        );
+                        let bat_path = format!("{}\\InfernoAoIP.bat", startup_dir);
+                        if chk_autostart.check_state() == nwg::CheckBoxState::Checked {
+                            let exe = std::env::current_exe().unwrap_or_default();
+                            let _ = std::fs::write(
+                                &bat_path,
+                                format!("@echo off\nstart \"\" \"{}\"", exe.display()),
+                            );
+                        } else {
+                            let _ = std::fs::remove_file(&bat_path);
+                        }
                     }
                 }
                 _ => {}
