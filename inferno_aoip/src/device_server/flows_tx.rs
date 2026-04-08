@@ -394,7 +394,10 @@ impl<P: ProxyToSamplesBuffer> FlowsTransmitterInternal<P> {
           debug_assert!(previous.is_none());
         }
         Command::RemoveFlow { index } => {
-          self.flows[index] = None; // TODO is freeing memory in realtime thread safe???
+          // FIXME: setting None drops the flow in realtime thread, freeing memory may cause jitter
+          // If this becomes a performance issue, consider: wrapping flow in Option<Box<>> and deferring
+          // drop to a non-RT thread via tokio::task::spawn_blocking, or pre-allocating a pool.
+          self.flows[index] = None;
         }
         Command::SetChannels { index, channel_indices } => {
           let now_opt = self.now();

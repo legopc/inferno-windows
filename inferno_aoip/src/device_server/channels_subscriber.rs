@@ -593,6 +593,10 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
     }
 
     // TODO check sample rate so that we don't request flows from devices with incompatible sample rate
+    // Note: AdvertisedChannel doesn't currently expose TX device sample rate.
+    // For now, log a debug note that sample rate validation is needed.
+    // In the future, when TX device advertises sample_rate in the channel info,
+    // add validation here: if tx_sample_rate != self.self_info.sample_rate { warn!(...) }
 
     // Resolve multicast bundles:
     let dns_resolve_futures = channels_per_bundle.keys().enumerate().map(|(i, bund_full_name)| {

@@ -667,8 +667,8 @@ pub async fn run_server(
         }
 
         x => {
-          error!("received unknown opcode1 {x:#04x}, content {}", hex::encode(request.content()));
-          error!("whole packet: {:?}", hex::encode(request.into_storage()));
+          tracing::warn!("ARC: unknown opcode 0x{:04x}, returning not-supported", x);
+          conn.respond_with_code(0xFFFF, &[]).await;
         }
       }
     } else {

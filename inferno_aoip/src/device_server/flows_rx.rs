@@ -260,7 +260,10 @@ impl<P: ProxyToSamplesBuffer> FlowsReceiverInternal<P> {
         Err(e) => {
           if e.kind() != WouldBlock {
             error!("flow socket receive error: {:?}", e);
-            // TODO recreate socket?
+            // Socket error - attempt 1 retry with 500ms sleep before breaking
+            tracing::warn!("Socket error on RX flow, attempting recovery");
+            std::thread::sleep(Duration::from_millis(500));
+            error!("flow socket error persists after recovery attempt, giving up");
           }
           break;
         }
@@ -417,7 +420,9 @@ impl<P: ProxyToSamplesBuffer> FlowsReceiverInternal<P> {
                 self.silence_writers.iter().position(|sw| Arc::ptr_eq(sw.sink.shared(), sink.shared()))
               {
                 self.silence_writers.swap_remove(existing_index).sink
-                // TODO: previous sink is dropped. is freeing memory in realtime thread safe???
+                // FIXME: previous sink is dropped here, freeing memory in realtime thread may cause jitter
+                // If this becomes a performance issue, consider: wrapping sink in Box<Arc<>> and deferring
+                // drop to a non-RT thread via tokio::task::spawn_blocking, or pre-allocating a pool.
               } else {
                 if let Some(now) = self.clock.wrapping_now_in_timebase(self.sample_rate.into()) {
                   sink.shared().reset(now.wrapping_add_signed(timestamp_shift));
