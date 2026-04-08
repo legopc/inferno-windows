@@ -153,6 +153,10 @@ impl<P: ProxyToSamplesBuffer> FlowsTransmitterInternal<P> {
         let start_ts = (flow.next_ts as Clock).wrapping_add_signed(self.timestamp_shift);
         for (index_in_flow, &ch_opt) in flow.channel_indices.iter().enumerate() {
           if let Some(ch_index) = ch_opt {
+            if ch_index >= self.channels_sources.len() {
+              error!("channel index {} out of range (max {})", ch_index, self.channels_sources.len());
+              continue;
+            }
             //(self.callback)(flow.next_ts, ch_index, &mut tmp_samples[0..flow.fpp]);
             // TODO remove not really necessary copy to tmp_samples, write_*_samples could read directly from ring buffer
             let r =
@@ -394,9 +398,10 @@ impl<P: ProxyToSamplesBuffer> FlowsTransmitterInternal<P> {
           debug_assert!(previous.is_none());
         }
         Command::RemoveFlow { index } => {
-          // FIXME: setting None drops the flow in realtime thread, freeing memory may cause jitter
-          // If this becomes a performance issue, consider: wrapping flow in Option<Box<>> and deferring
-          // drop to a non-RT thread via tokio::task::spawn_blocking, or pre-allocating a pool.
+          // RT-SAFE TODO: defer drop of flow to background channel
+          // Currently: flow dropped directly when set to None, potentially causing RT jitter.
+          // Solution: wrap flow in ManuallyDrop, send ManuallyDrop-wrapped flow to drop_sender,
+          //           background task drops it in async context.
           self.flows[index] = None;
         }
         Command::SetChannels { index, channel_indices } => {
@@ -622,6 +627,10 @@ impl FlowsTransmitter {
     flow_handle[0..4].copy_from_slice(&flow_index.to_be_bytes());
     flow_handle[4..6].copy_from_slice(&cookie.to_be_bytes());
 
+    if (flow_index as usize) >= self.flows_info.len() {
+      error!("flow index {} out of range (max {})", flow_index, self.flows_info.len());
+      return Err(std::io::Error::from(std::io::ErrorKind::OutOfMemory));
+    }
     self.flows_info[flow_index as usize] = Some(flow_info);
 
     self.save_state().await;

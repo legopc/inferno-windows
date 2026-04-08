@@ -409,7 +409,22 @@ impl<P: ProxyToSamplesBuffer> FlowsReceiverInternal<P> {
                   }
                 }
               }
-              let socket = self.sockets[socket_index].as_mut().unwrap();
+              if socket_index >= self.sockets.len() {
+                error!("socket_index {} out of range (max {})", socket_index, self.sockets.len());
+                continue;
+              }
+              let socket = match self.sockets[socket_index].as_mut() {
+                Some(s) => s,
+                None => {
+                  warn!("got token not bound to any existing socket (index {})", socket_index);
+                  continue;
+                }
+              };
+
+              if channel_in_flow >= socket.channels.len() {
+                error!("channel_in_flow {} out of range (max {})", channel_in_flow, socket.channels.len());
+                continue;
+              }
 
               let timestamp_shift = (0 as ClockDiff)
                 .wrapping_sub_unsigned(start_timestamp.unwrap_or(0))
@@ -420,9 +435,10 @@ impl<P: ProxyToSamplesBuffer> FlowsReceiverInternal<P> {
                 self.silence_writers.iter().position(|sw| Arc::ptr_eq(sw.sink.shared(), sink.shared()))
               {
                 self.silence_writers.swap_remove(existing_index).sink
-                // FIXME: previous sink is dropped here, freeing memory in realtime thread may cause jitter
-                // If this becomes a performance issue, consider: wrapping sink in Box<Arc<>> and deferring
-                // drop to a non-RT thread via tokio::task::spawn_blocking, or pre-allocating a pool.
+                // RT-SAFE TODO: defer drop of old sink to background channel
+                // Currently: sink dropped directly, potentially causing RT jitter.
+                // Solution: wrap sink in ManuallyDrop, send ManuallyDrop-wrapped sink to drop_sender,
+                //           background task drops it in async context.
               } else {
                 if let Some(now) = self.clock.wrapping_now_in_timebase(self.sample_rate.into()) {
                   sink.shared().reset(now.wrapping_add_signed(timestamp_shift));
@@ -448,7 +464,15 @@ impl<P: ProxyToSamplesBuffer> FlowsReceiverInternal<P> {
               }
             }
             Command::DisconnectChannel { socket_index, channel_in_flow, rb_shared } => {
+              if socket_index >= self.sockets.len() {
+                error!("socket_index {} out of range (max {})", socket_index, self.sockets.len());
+                continue;
+              }
               if let Some(sd) = self.sockets[socket_index].as_mut() {
+                if channel_in_flow >= sd.channels.len() {
+                  error!("channel_in_flow {} out of range (max {})", channel_in_flow, sd.channels.len());
+                  continue;
+                }
                 if let Some(ch) = sd.channels[channel_in_flow].as_mut() {
                   let sink_index_opt =
                     ch.sinks.iter().position(|sink| Arc::ptr_eq(sink.shared(), &rb_shared));
@@ -642,6 +666,15 @@ impl<P: ProxyToSamplesBuffer + Send + Sync + 'static> FlowsReceiver<P> {
   ) {
     // TODO: it would be more logical to move socket creation here from channels_subscriber.rs which is already convoluted
     debug!("adding flow receiver local index={local_index}");
+    
+    {
+      let flows_info = self.flows_info.read().unwrap();
+      if local_index >= flows_info.len() {
+        error!("flow index {} out of range (max {})", local_index, flows_info.len());
+        return;
+      }
+    }
+    
     let empty_sinks_vecs = (0..channels_count)
       .map(|_| {
         let mut v = vec![];
@@ -680,6 +713,13 @@ impl<P: ProxyToSamplesBuffer + Send + Sync + 'static> FlowsReceiver<P> {
   }
   pub async fn remove_socket(&self, local_index: usize) {
     debug!("removing flow receiver local index={local_index}");
+    {
+      let flows_info = self.flows_info.read().unwrap();
+      if local_index >= flows_info.len() {
+        error!("flow index {} out of range (max {})", local_index, flows_info.len());
+        return;
+      }
+    }
     self.flows_info.write().unwrap()[local_index] = None;
     self.commands_sender.send(Command::RemoveSocket { index: local_index }).await.log_and_forget();
     self.waker.wake().log_and_forget();
@@ -695,8 +735,20 @@ impl<P: ProxyToSamplesBuffer + Send + Sync + 'static> FlowsReceiver<P> {
 
     {
       let mut flows_info = self.flows_info.write().unwrap();
-      flows_info[local_flow_index].as_mut().unwrap().channels_map[channel_in_flow]
-        .set(local_channel_index, true);
+      if local_flow_index >= flows_info.len() {
+        error!("flow index {} out of range (max {})", local_flow_index, flows_info.len());
+        return;
+      }
+      if let Some(flow_info) = flows_info[local_flow_index].as_mut() {
+        if channel_in_flow >= flow_info.channels_map.len() {
+          error!("channel_in_flow {} out of range for flow {} (max {})", channel_in_flow, local_flow_index, flow_info.channels_map.len());
+          return;
+        }
+        flow_info.channels_map[channel_in_flow].set(local_channel_index, true);
+      } else {
+        error!("flow {} not found", local_flow_index);
+        return;
+      }
     }
 
     self
@@ -717,8 +769,20 @@ impl<P: ProxyToSamplesBuffer + Send + Sync + 'static> FlowsReceiver<P> {
 
     {
       let mut flows_info = self.flows_info.write().unwrap();
-      flows_info[local_flow_index].as_mut().unwrap().channels_map[channel_in_flow]
-        .set(local_channel_index, false);
+      if local_flow_index >= flows_info.len() {
+        error!("flow index {} out of range (max {})", local_flow_index, flows_info.len());
+        return;
+      }
+      if let Some(flow_info) = flows_info[local_flow_index].as_mut() {
+        if channel_in_flow >= flow_info.channels_map.len() {
+          error!("channel_in_flow {} out of range for flow {} (max {})", channel_in_flow, local_flow_index, flow_info.channels_map.len());
+          return;
+        }
+        flow_info.channels_map[channel_in_flow].set(local_channel_index, false);
+      } else {
+        error!("flow {} not found", local_flow_index);
+        return;
+      }
     }
 
     self
