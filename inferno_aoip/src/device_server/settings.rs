@@ -165,6 +165,12 @@ pub struct Settings {
   pub tx_latency_ns: u32,
   pub clock_path: Option<PathBuf>,
   pub use_safe_clock: bool,
+  /// Frames per packet override: None=negotiate (auto), Some(n)=force specific value
+  pub fpp_override: Option<u32>,
+  /// Ring buffer size in samples per channel (must be power of 2, default 524288)
+  pub rx_buffer_samples: usize,
+  /// Latency reference in samples (default 4800 = 100ms at 48kHz)
+  pub latency_ref_samples: usize,
 }
 
 impl Settings {
@@ -200,6 +206,9 @@ impl Settings {
         .unwrap_or(10_000_000),
       clock_path: config.get("CLOCK_PATH").map(|p| p.try_into().unwrap()),
       use_safe_clock,
+      fpp_override: None,
+      rx_buffer_samples: 524288,
+      latency_ref_samples: 4800,
     };
 
     // the following should be harmless, as the application still has the chance to overwrite it

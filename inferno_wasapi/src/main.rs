@@ -638,8 +638,21 @@ pub async fn run_audio_service(
     dante_config.insert("SAMPLE_RATE".to_owned(), sample_rate.to_string());
     dante_config.insert("NAME".to_owned(), dante_device_name.clone());
 
-    let settings = Settings::new("inferno_wasapi", "InfernoWASPI", None, &dante_config);
-    info!("Audio service: device={dante_device_name} rate={sample_rate}Hz channels={channels}");
+    let mut settings = Settings::new("inferno_wasapi", "InfernoWASPI", None, &dante_config);
+    
+    // Wire config.fpp to Settings
+    settings.fpp_override = match config.fpp.as_str() {
+        "auto" => None,
+        "min" => Some(0),
+        "max" => Some(u32::MAX),
+        n => n.parse::<u32>().ok(),
+    };
+
+    // Wire config buffer settings to Settings
+    settings.rx_buffer_samples = config.rx_buffer_samples as usize;
+    settings.latency_ref_samples = config.latency_ref_samples as usize;
+    
+    info!("Audio service: device={dante_device_name} rate={sample_rate}Hz channels={channels} fpp={}", config.fpp);
 
     let audio_queue: Arc<Mutex<VecDeque<i32>>> =
         Arc::new(Mutex::new(VecDeque::with_capacity(sample_rate as usize / 4 * channels)));

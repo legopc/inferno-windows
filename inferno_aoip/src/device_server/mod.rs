@@ -32,6 +32,7 @@ pub(crate) mod info_mcast_server;
 pub(crate) mod mdns_server;
 
 pub(crate) mod channels_subscriber;
+pub(crate) mod drop_channel;
 pub(crate) mod flows_rx;
 pub(crate) mod flows_tx;
 mod peaks;
@@ -103,14 +104,17 @@ pub struct DeviceServer {
   tx_multicasts_by_channel: Arc<RwLock<BTreeMap<usize, PointerToMulticast>>>,
   rx_peaks_supplier: Arc<RwLock<Box<dyn Fn() -> Vec<u8> + Send + Sync>>>,
   tx_peaks_supplier: Arc<RwLock<Box<dyn Fn() -> Vec<u8> + Send + Sync>>>,
+  drop_sender: drop_channel::RealTimeDropSender,
   shutdown_todo: Pin<Box<dyn Future<Output = ()> + Send>>,
   tx_shutdown_todo: Option<Pin<Box<dyn Future<Output = ()> + Send>>>,
   rx_shutdown_todo: Option<Pin<Box<dyn Future<Output = ()> + Send>>>,
+  settings: Arc<Settings>,
 }
 
 impl DeviceServer {
   pub async fn start(settings: settings::Settings) -> Self {
     let self_info = Arc::new(settings.self_info);
+    let settings = Arc::new(settings);
     let state_storage = Arc::new(StateStorage::new(&self_info));
     let ref_instant = Instant::now();
 
@@ -132,6 +136,9 @@ impl DeviceServer {
     info!("waiting for clock");
     let shared_media_clock = make_shared_media_clock(&clock_receiver, settings.use_safe_clock).await;
     info!("clock ready");
+
+    // Spawn background drop handler for RT thread deallocation
+    let drop_sender = drop_channel::spawn_drop_handler();
 
     let mut tasks = vec![];
 
@@ -197,11 +204,13 @@ impl DeviceServer {
       tx_multicasts_by_channel,
       rx_peaks_supplier,
       tx_peaks_supplier,
+      drop_sender,
       //tasks,
       //tx_inputs,
       shutdown_todo,
       rx_shutdown_todo: None,
       tx_shutdown_todo: None,
+      settings,
     }
   }
 
@@ -211,14 +220,14 @@ impl DeviceServer {
       Box::new(samples_callback),
     );
     let tasks = vec![tokio::spawn(col_fut)];
-    let buffering = OwnedBuffering::new(524288 /*TODO*/, 4800 /*TODO*/, Arc::new(col));
+    let buffering = OwnedBuffering::new(self.settings.rx_buffer_samples, self.settings.latency_ref_samples, Arc::new(col));
     self.receive(tasks, None, buffering, Default::default(), None).await;
   }
   pub async fn receive_realtime(&mut self) -> RealTimeSamplesReceiver<OwnedBuffer<Atomic<Sample>>> {
     let (col, col_fut, rt_recv) =
       SamplesCollector::new_realtime(self.self_info.clone(), self.get_realtime_clock_receiver());
     let tasks = vec![tokio::spawn(col_fut)];
-    let buffering = OwnedBuffering::new(524288 /*TODO*/, 4800 /*TODO*/, Arc::new(col));
+    let buffering = OwnedBuffering::new(self.settings.rx_buffer_samples, self.settings.latency_ref_samples, Arc::new(col));
     self.receive(tasks, None, buffering, Default::default(), None).await;
 
     rt_recv
@@ -230,7 +239,7 @@ impl DeviceServer {
     current_timestamp: Arc<AtomicUsize>,
     on_transfer: Option<TransferNotifier>,
   ) {
-    let buffering = ExternalBuffering::new(rx_channels_buffers, 4800 /*TODO*/);
+    let buffering = ExternalBuffering::new(rx_channels_buffers, self.settings.latency_ref_samples);
     let rbs = buffering.ring_buffers.clone();
     *self.rx_peaks_supplier.write().unwrap() = Box::new(move || peaks_of_buffers(&rbs));
     self.receive(vec![], Some(start_time_rx), buffering, current_timestamp, on_transfer).await;
@@ -266,6 +275,7 @@ impl DeviceServer {
       srx1,
       current_timestamp,
       on_transfer,
+      self.drop_sender.clone(),
     );
     let flows_rx_handle = Arc::new(flows_rx_handle);
     let (channels_sub_handle, channels_sub_worker) = ChannelsSubscriber::new(
@@ -279,6 +289,7 @@ impl DeviceServer {
       self.state_storage.clone(),
       srx2,
       self.ref_instant,
+      self.settings.clone(),
     );
     let channels_sub_handle = Arc::new(channels_sub_handle);
     let _ = self.channels_sub_tx.send(Some(channels_sub_handle.clone()));
@@ -333,6 +344,7 @@ impl DeviceServer {
       start_time_rx,
       current_timestamp.clone(),
       on_transfer,
+      self.drop_sender.clone(),
     );
     flows_tx_handle.load_state().await.log_and_forget();
     *self.flows_tx.lock().await = Some(flows_tx_handle);

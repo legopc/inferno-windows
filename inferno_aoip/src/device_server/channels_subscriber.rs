@@ -33,6 +33,7 @@ use std::{
 use tokio::{sync::mpsc, time::sleep, time::timeout};
 
 use super::flows_rx::{FlowInfo, FlowsReceiver};
+use super::settings::Settings;
 
 const REORDER_WAIT_SAMPLES: usize = 4800;
 
@@ -102,6 +103,7 @@ impl ChannelsSubscriber {
     state_storage: Arc<StateStorage>,
     start_time_rx: Option<tokio::sync::oneshot::Receiver<Clock>>,
     ref_instant: Instant,
+    settings: Arc<Settings>,
   ) -> (Self, Pin<Box<dyn Future<Output = ()> + Send + 'static>>) {
     let (tx, rx) = mpsc::channel(100);
     let r = Self {
@@ -121,6 +123,7 @@ impl ChannelsSubscriber {
       tx_latency_ns,
       state_storage,
       ref_instant,
+      settings,
     );
     return (r, async move { internal.run(start_time_rx).await }.boxed());
   }
@@ -362,6 +365,7 @@ struct ChannelsSubscriberInternal<P: ProxyToSamplesBuffer, B: ChannelsBuffering<
   ref_instant: Instant,
   needs_resolving: bool,
   resolve_now: bool,
+  settings: Arc<Settings>,
 }
 
 impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
@@ -379,6 +383,7 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
     tx_latency_ns: u32,
     state_storage: Arc<StateStorage>,
     ref_instant: Instant,
+    settings: Arc<Settings>,
   ) -> Self {
     let num_channels = self_info.rx_channels.len();
     return Self {
@@ -400,6 +405,7 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
       ref_instant,
       needs_resolving: false,
       resolve_now: false,
+      settings,
     };
   }
   async fn notify_channels_change(&self, channel_indices: impl IntoIterator<Item = usize>) {
@@ -593,10 +599,10 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
     }
 
     // TODO check sample rate so that we don't request flows from devices with incompatible sample rate
-    // Note: AdvertisedChannel doesn't currently expose TX device sample rate.
-    // For now, log a debug note that sample rate validation is needed.
-    // In the future, when TX device advertises sample_rate in the channel info,
-    // add validation here: if tx_sample_rate != self.self_info.sample_rate { warn!(...) }
+    // Note: AdvertisedChannel does not currently expose TX device sample rate.
+    // Once Dante protocol update provides sample_rate in channel info, validation check will be added
+    // before requesting flows to prevent corrupt/silent audio from rate mismatches.
+    // See channels_subscriber.rs around line 946 for where the check should be added.
 
     // Resolve multicast bundles:
     let dns_resolve_futures = channels_per_bundle.keys().enumerate().map(|(i, bund_full_name)| {
@@ -919,6 +925,7 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
           let control_client = self.control_client.clone();
           let subscription_info = self.subscriptions_info.clone();
           let sample_rate = self.self_info.sample_rate;
+          let settings = self.settings.clone();
 
           let future = async move {
             let (socket, port) = match create_mio_udp_socket(self_ip) {
@@ -937,20 +944,35 @@ impl<P: ProxyToSamplesBuffer + Sync + Send + 'static, B: ChannelsBuffering<P>>
               / (tx_channels.len() * (first.bits_per_sample as usize) / 8))
               .min(u16::MAX as usize) as u16;
             info!("Requesting RX flow {} from TX at {:?} for channels {:?} on port {}", flow_index + 1, first.addr, tx_channels, port);
-            // TODO: Wire config.fpp here to select FPP mode (auto/min/max/N)
-            // Current behavior: uses max FPP (highest latency, lowest overhead)
-            // When implemented, will parse fpp field and select accordingly:
-            // - "auto": negotiate with TX
-            // - "min": use FPP_MIN
-            // - "max": use FPP_MAX_ADVERTISED
-            // - numeric string: parse as u16 and use that value
+            
+            // FIXME: Validate TX device sample rate compatibility.
+            // Currently, AdvertisedChannel does not expose the TX device's sample_rate field.
+            // When Dante devices advertise sample_rate in channel info (mdns_client::AdvertisedChannel),
+            // add a check here:
+            //   if tx_sample_rate != sample_rate {
+            //     warn!("Sample rate mismatch: TX device '{}' advertises {}Hz but we are configured for {}Hz. \
+            //            Refusing subscription. Change config.toml sample_rate or reconfigure TX device.",
+            //            ..., tx_sample_rate, sample_rate);
+            //     return None;
+            //   }
+            // For now, log that this check will occur on a future API update.
+            debug!("TX device at {} will be checked for sample_rate compatibility upon protocol update", first.addr);
+            
+            // Wire config.fpp to select FPP mode (auto/min/max/N)
+            let fpp = match settings.fpp_override {
+              None => first.fpp_max.min(fpp_mtu_limit),      // auto: negotiate max that fits MTU
+              Some(0) => first.fpp_min,                       // 0 = minimum (lowest latency)
+              Some(u32::MAX) => first.fpp_max.min(fpp_mtu_limit), // u32::MAX = maximum
+              Some(n) => (n as u16).min(first.fpp_max).max(first.fpp_min), // specific value, clamped
+            };
+            
             let handle = match control_client
               .request_flow(
                 &first.addr,
                 first.dbcp1,
                 sample_rate,
                 first.bits_per_sample,
-                first.fpp_max.min(fpp_mtu_limit), // TODO fpp selection, here we use max for lowest overhead
+                fpp,
                 &tx_channels,
                 port,
                 &flow_name,
