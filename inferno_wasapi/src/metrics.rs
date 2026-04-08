@@ -60,13 +60,20 @@ pub async fn serve_metrics(metrics: Arc<Metrics>) {
     };
     
     loop {
-        if let Ok((mut stream, _)) = listener.accept().await {
-            let body = metrics.render_prometheus();
-            let response = format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: text/plain; version=0.0.4\r\nContent-Length: {}\r\n\r\n{}",
-                body.len(), body
-            );
-            let _ = stream.write_all(response.as_bytes()).await;
+        match listener.accept().await {
+            Ok((mut stream, addr)) => {
+                let body = metrics.render_prometheus();
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain; version=0.0.4\r\nContent-Length: {}\r\n\r\n{}",
+                    body.len(), body
+                );
+                if let Err(e) = stream.write_all(response.as_bytes()).await {
+                    tracing::debug!(remote=%addr, "Metrics endpoint write error: {}", e);
+                }
+            }
+            Err(e) => {
+                tracing::warn!("Metrics endpoint accept error: {}", e);
+            }
         }
     }
 }

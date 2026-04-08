@@ -29,12 +29,19 @@ pub use config::Config;
 
 // ────────────────────────────────────────────────────────────────────────────────
 // Named constants for clarity and maintainability
+#[allow(dead_code)]
 const QUEUE_BUFFER_DURATION_MS: usize = 250;      // 250ms ring buffer
+#[allow(dead_code)]
 const RENDER_STATS_LOG_INTERVAL_SECS: u64 = 10;   // Log stats every 10s
+#[allow(dead_code)]
 const HEALTH_CHECK_INTERVAL_SECS: u64 = 30;       // Health monitor interval
+#[allow(dead_code)]
 const FIREWALL_PORTS: &[u16] = &[4440, 4455, 5353, 8700, 8800];
+#[allow(dead_code)]
 const PANIC_BACKTRACE_ENABLED: bool = true;
+#[allow(dead_code)]
 const LOCK_FILE_NAME: &str = "device.lock";
+#[allow(dead_code)]
 const WASAPI_EVENT_TIMEOUT_MS: u32 = 200;
 
 use std::collections::{BTreeMap, VecDeque};

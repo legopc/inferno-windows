@@ -13,17 +13,29 @@ pub fn run_tray() {
     menu.append_items(&[&status_item, &separator, &quit_item]).ok();
     
     // Load a simple icon (embedded 16x16 ICO)
-    let icon = tray_icon::Icon::from_rgba(
+    let icon = match tray_icon::Icon::from_rgba(
         vec![0u8, 128u8, 255u8, 255u8].repeat(16 * 16),
         16, 16,
-    ).expect("icon creation failed");
-    
-    let _tray = TrayIconBuilder::new()
+    ) {
+        Ok(i) => i,
+        Err(e) => {
+            tracing::error!("Failed to create tray icon: {}", e);
+            return;
+        }
+    };
+
+    let _tray = match TrayIconBuilder::new()
         .with_menu(Box::new(menu))
         .with_tooltip("InfernoAoIP Dante Virtual Soundcard")
         .with_icon(icon)
         .build()
-        .expect("tray icon build failed");
+    {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::error!("Failed to build tray icon: {}", e);
+            return;
+        }
+    };
     
     tracing::info!("System tray icon active");
     

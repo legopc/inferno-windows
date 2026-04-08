@@ -57,7 +57,7 @@ fn run_service() -> Result<(), Box<dyn std::error::Error>> {
     let config = crate::Config::load();
     let rt = tokio::runtime::Runtime::new()?;
     if let Err(e) = rt.block_on(crate::run_audio_service(config, shutdown_rx)) {
-        tracing::error!("Audio service error: {e}");
+        tracing::error!(error=%e, backtrace=?std::backtrace::Backtrace::capture(), "Audio service error");
     }
 
     status_handle.set_service_status(ServiceStatus {

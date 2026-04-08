@@ -32,10 +32,20 @@ pub fn setup_firewall_rules() -> FirewallResult {
             .output();
         
         match output {
-            Ok(o) if o.status.success() => result.rules_added.push(name.to_string()),
-            Ok(o) => result.errors.push(format!("{}: {}", name, 
-                String::from_utf8_lossy(&o.stderr))),
-            Err(e) => result.errors.push(format!("{}: {}", name, e)),
+            Ok(o) if o.status.success() => {
+                tracing::info!("Firewall rule added: {}", name);
+                result.rules_added.push(name.to_string());
+            }
+            Ok(o) => {
+                let err_msg = format!("{}: {}", name, String::from_utf8_lossy(&o.stderr));
+                tracing::error!("Firewall rule failed (may require admin): {}", err_msg);
+                result.errors.push(err_msg);
+            }
+            Err(e) => {
+                let err_msg = format!("{}: {}", name, e);
+                tracing::error!("Firewall rule failed: {}", err_msg);
+                result.errors.push(err_msg);
+            }
         }
     }
     result

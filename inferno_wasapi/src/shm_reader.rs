@@ -10,6 +10,10 @@ use windows::Win32::System::Memory::{
 use windows::Win32::Foundation::{CloseHandle, HANDLE};
 use windows::core::PCWSTR;
 
+const SHM_DRIVER_INACTIVE_MS: u64 = 200;
+const SHM_MAX_CHANNELS: u32 = 64;
+const SHM_MAX_SAMPLE_RATE: u32 = 192_000;
+
 pub const SHM_NAME: &str = "Global\\InfernoAudioShm";
 
 /// Header at offset 0 of the shared memory (16 bytes total)
@@ -61,7 +65,7 @@ impl ShmReader {
             *(ptr.Value as *const ShmHeader)
         };
 
-        if header.channel_count == 0 || header.channel_count > 64 {
+        if header.channel_count == 0 || header.channel_count > SHM_MAX_CHANNELS {
             tracing::warn!("Invalid channel count in shared memory: {}", header.channel_count);
             unsafe {
                 UnmapViewOfFile(ptr).ok();
@@ -70,7 +74,7 @@ impl ShmReader {
             return None;
         }
 
-        if header.sample_rate == 0 || header.sample_rate > 192000 {
+        if header.sample_rate == 0 || header.sample_rate > SHM_MAX_SAMPLE_RATE {
             tracing::warn!("Invalid sample rate in shared memory: {}", header.sample_rate);
             unsafe {
                 UnmapViewOfFile(ptr).ok();
@@ -121,8 +125,8 @@ impl ShmReader {
             .unwrap_or(0);
 
         if current_write_index == self.last_write_index {
-            if now_ms.saturating_sub(self.last_active_time) > 200 {
-                tracing::debug!("Driver inactive for >200ms");
+            if now_ms.saturating_sub(self.last_active_time) > SHM_DRIVER_INACTIVE_MS {
+                tracing::warn!("Driver inactive for >{}ms, no new samples available", SHM_DRIVER_INACTIVE_MS);
                 return None;
             }
             return None;
@@ -199,7 +203,7 @@ impl ShmReader {
             .map(|d| d.as_millis() as u64)
             .unwrap_or(0);
 
-        now_ms.saturating_sub(self.last_active_time) <= 200
+        now_ms.saturating_sub(self.last_active_time) <= SHM_DRIVER_INACTIVE_MS
     }
 }
 
