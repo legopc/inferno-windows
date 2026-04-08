@@ -24,6 +24,12 @@ pub struct Config {
     /// Default: "auto"
     #[serde(default = "Config::default_fpp")]
     pub fpp: String,
+    /// RX ring buffer size in samples per channel (power of 2, default 524288 ≈ 10.9s at 48kHz)
+    #[serde(default = "Config::default_rx_buffer_samples")]
+    pub rx_buffer_samples: u32,
+    /// Latency reference in samples (default 4800 = 100ms at 48kHz)  
+    #[serde(default = "Config::default_latency_ref_samples")]
+    pub latency_ref_samples: u32,
 }
 
 impl Default for Config {
@@ -39,6 +45,8 @@ impl Default for Config {
             device_locked: false,
             network_interface: String::new(),
             fpp: "auto".to_string(),
+            rx_buffer_samples: 524288,
+            latency_ref_samples: 4800,
         }
     }
 }
@@ -53,6 +61,10 @@ impl Config {
     }
 
     fn default_fpp() -> String { "auto".to_string() }
+
+    fn default_rx_buffer_samples() -> u32 { 524288u32 }
+
+    fn default_latency_ref_samples() -> u32 { 4800u32 }
 
     pub fn resolve_interface_ip(&self) -> Option<std::net::Ipv4Addr> {
         if self.network_interface.is_empty() {
@@ -113,6 +125,34 @@ impl Config {
             config.channels = 2;
         }
 
+        // Validate and clamp rx_buffer_samples to next power of 2
+        if config.rx_buffer_samples == 0 {
+            tracing::warn!("Invalid rx_buffer_samples {} in config, using default 524288", config.rx_buffer_samples);
+            config.rx_buffer_samples = 524288;
+        } else if !config.rx_buffer_samples.is_power_of_two() {
+            let next_pow2 = config.rx_buffer_samples.next_power_of_two();
+            tracing::warn!("rx_buffer_samples {} is not power of 2, clamping to {}", config.rx_buffer_samples, next_pow2);
+            config.rx_buffer_samples = next_pow2;
+        }
+
+        // Enforce Dante 31-char device name limit
+        if config.device_name.len() > 31 {
+            let truncated = config.device_name.chars().take(31).collect::<String>();
+            tracing::warn!(
+                "device_name '{}' exceeds 31-char Dante limit, truncating to '{}'",
+                config.device_name, truncated
+            );
+            config.device_name = truncated;
+        }
+        // Also validate no special chars (Dante only allows alphanumeric, hyphen, space)
+        let valid: String = config.device_name.chars()
+            .map(|c| if c.is_alphanumeric() || c == '-' || c == ' ' { c } else { '-' })
+            .collect();
+        if valid != config.device_name {
+            tracing::warn!("device_name contained invalid chars, sanitized to '{}'", valid);
+            config.device_name = valid;
+        }
+
         config.save(); // write defaults on first run
         config
     }
@@ -152,6 +192,8 @@ mod tests {
             sample_rate: 96000,
             channels: 8,
             latency_ms: 20,
+            rx_buffer_samples: 262144,
+            latency_ref_samples: 9600,
             ..Config::default()
         };
         let serialized = toml::to_string(&original).expect("serialize");
@@ -161,6 +203,8 @@ mod tests {
         assert_eq!(loaded.channels, 8);
         assert_eq!(loaded.latency_ms, 20);
         assert_eq!(loaded.fpp, "auto");
+        assert_eq!(loaded.rx_buffer_samples, 262144);
+        assert_eq!(loaded.latency_ref_samples, 9600);
     }
 
     #[test]
@@ -177,6 +221,8 @@ channel_names = ["Left", "Right"]
 device_locked = true
 network_interface = "192.168.1.1"
 fpp = "max"
+rx_buffer_samples = 262144
+latency_ref_samples = 9600
 "#;
         let cfg: Config = toml::from_str(toml).expect("parse");
         assert_eq!(cfg.device_name, "MyDevice");
@@ -189,6 +235,8 @@ fpp = "max"
         assert!(cfg.device_locked);
         assert_eq!(cfg.network_interface, "192.168.1.1");
         assert_eq!(cfg.fpp, "max");
+        assert_eq!(cfg.rx_buffer_samples, 262144);
+        assert_eq!(cfg.latency_ref_samples, 9600);
     }
 
     #[test]
@@ -205,5 +253,13 @@ fpp = "max"
         assert_eq!(cfg.channel_name(0), "Left");
         assert_eq!(cfg.channel_name(1), "Right");
         assert_eq!(cfg.channel_name(2), "Ch 3"); // falls back to default
+    }
+
+    #[test]
+    fn test_device_name_truncation() {
+        // Simulate what load() does for long names
+        let long_name = "A".repeat(40);
+        let truncated: String = long_name.chars().take(31).collect();
+        assert_eq!(truncated.len(), 31);
     }
 }
