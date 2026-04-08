@@ -104,7 +104,39 @@ git clone https://github.com/microsoft/Windows-driver-samples.git ..\windows-dri
 
 ---
 
-## Step 7 — Build and Install SYSVAD Virtual Audio Driver
+## Step 7 — Building the Kernel Driver
+
+### WDK Build Environment Status
+
+The SYSVAD TabletAudioSample source has been forked into `inferno_driver/` directory. 
+
+**Build Tool Findings (WDK 10.0.26100.0):**
+- ✅ WDK installation verified at: `C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\`
+- ✅ MSBuild path confirmed: `C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe`
+- ❌ **Build blocker:** Missing WDK build task assembly
+  - Error: `Microsoft.DriverKit.Build.Tasks.18.0.dll` not found at `C:\Program Files (x86)\Windows Kits\10\build\10.0.26100.0\bin\`
+  - This is a known WDK installation issue on some systems
+  - **Workaround:** Build from within Visual Studio IDE with WDK extension, or repair/reinstall WDK
+
+### Building with Visual Studio IDE
+
+1. Open Visual Studio 2022
+2. Open `inferno_driver\inferno_driver.vcxproj`
+3. Set configuration to **Release** and platform to **x64**
+4. **Build → Build Solution**
+5. Output binary: `inferno_driver\x64\Release\inferno_driver.sys`
+
+### Source Details
+
+The forked driver is based on Microsoft's SYSVAD TabletAudioSample:
+- **Source:** `https://github.com/microsoft/Windows-driver-samples` (audio/sysvad/TabletAudioSample)
+- **Files:** 48 source files (C++, headers, INF, project files)
+- **Driver name:** `inferno_driver.sys` (renamed from `tabletaudiosample.sys`)
+- **Device name:** "Inferno Virtual Audio Device" (updated in INF files)
+
+---
+
+## Step 8 — Install SYSVAD Virtual Audio Driver
 
 Run from an **elevated PowerShell**:
 
@@ -124,7 +156,7 @@ device** so Windows routes system audio through it.
 
 ---
 
-## Step 8 — Register Self-Hosted GitHub Actions Runner
+## Step 9 — Register Self-Hosted GitHub Actions Runner
 
 This allows the **GitHub Copilot cloud agent** to run directly on this VM, with access to
 the WDK, SYSVAD driver, Rust toolchain, and local audio devices.
@@ -146,7 +178,7 @@ Or use the guided script:
 
 ---
 
-## Step 9 — Disable Copilot Integrated Firewall
+## Step 10 — Disable Copilot Integrated Firewall
 
 The Copilot cloud agent's built-in firewall is **incompatible with self-hosted runners** and
 must be disabled for the runner to work.
@@ -158,7 +190,7 @@ must be disabled for the runner to work.
 
 ---
 
-## Step 10 — Open Dante Firewall Ports
+## Step 11 — Open Dante Firewall Ports
 
 Run from an **elevated PowerShell**:
 
@@ -170,7 +202,7 @@ Required UDP ports: 4440, 4455, 5353, 8700, 8800
 
 ---
 
-## Step 11 — Build the Rust Code
+## Step 12 — Build the Rust Code
 
 ```powershell
 cargo build --release
