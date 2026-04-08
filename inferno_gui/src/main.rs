@@ -7,6 +7,8 @@ use std::time::Duration;
 use native_windows_gui as nwg;
 use serde::{Deserialize, Serialize};
 
+mod settings_window;
+
 // ── IPC types ────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -246,6 +248,15 @@ fn main() {
         .build(&mut btn_view_logs)
         .unwrap();
 
+    let mut btn_settings: nwg::Button = Default::default();
+    nwg::Button::builder()
+        .text("Settings")
+        .position((10, 255))
+        .size((100, 30))
+        .parent(&window)
+        .build(&mut btn_settings)
+        .unwrap();
+
     // ── Autostart checkbox ────────────────────────────────────────────────────
     let mut chk_autostart: nwg::CheckBox = Default::default();
     nwg::CheckBox::builder()
@@ -291,6 +302,7 @@ fn main() {
     let btn_reload = Rc::new(btn_reload);
     let btn_shutdown = Rc::new(btn_shutdown);
     let btn_view_logs = Rc::new(btn_view_logs);
+    let btn_settings = Rc::new(btn_settings);
     let chk_autostart = Rc::new(chk_autostart);
     let _timer = Rc::new(timer);
 
@@ -298,6 +310,7 @@ fn main() {
     let btn_reload_handle = btn_reload.handle;
     let btn_shutdown_handle = btn_shutdown.handle;
     let btn_view_logs_handle = btn_view_logs.handle;
+    let btn_settings_handle = btn_settings.handle;
     let chk_autostart_handle = chk_autostart.handle;
 
     let handler = nwg::full_bind_event_handler(
@@ -371,6 +384,12 @@ fn main() {
                             .collect::<Vec<_>>()
                             .join("\n");
                         nwg::modal_info_message(&window_handle, "Inferno Logs", &tail);
+                    } else if handle == btn_settings_handle {
+                        // Open settings window (non-modal for now; could be made modal with modal_dialog)
+                        let result = show_settings_window(&window_handle, &shared_cmd);
+                        if let Err(e) = result {
+                            nwg::modal_error_message(&window_handle, "Settings Error", &format!("Failed to open settings: {}", e));
+                        }
                     } else if handle == chk_autostart_handle {
                         let startup_dir = format!(
                             "{}\\Microsoft\\Windows\\Start Menu\\Programs\\Startup",
@@ -395,4 +414,232 @@ fn main() {
 
     nwg::dispatch_thread_events();
     nwg::unbind_event_handler(&handler);
+}
+
+/// Show the settings window and handle user interactions
+fn show_settings_window(parent_handle: &nwg::ControlHandle, shared_cmd: &SharedCmd) -> Result<(), String> {
+    use settings_window::SettingsWindow;
+
+    // Create settings window
+    let mut window: nwg::Window = Default::default();
+    nwg::Window::builder()
+        .size((520, 580))
+        .position((400, 200))
+        .title("Inferno Settings")
+        .flags(nwg::WindowFlags::WINDOW | nwg::WindowFlags::VISIBLE)
+        .build(&mut window)
+        .map_err(|e| format!("Failed to create window: {:?}", e))?;
+
+    let mut settings = SettingsWindow::default();
+
+    // Build all the controls
+    nwg::Label::builder()
+        .text("Device Name:")
+        .position((10, 15))
+        .size((185, 20))
+        .parent(&window)
+        .build(&mut settings.lbl_device_name)
+        .map_err(|e| format!("Failed to create label: {:?}", e))?;
+
+    nwg::TextInput::builder()
+        .text("")
+        .position((200, 15))
+        .size((290, 25))
+        .parent(&window)
+        .build(&mut settings.txt_device_name)
+        .map_err(|e| format!("Failed to create input: {:?}", e))?;
+
+    nwg::Label::builder()
+        .text("Sample Rate (Hz):")
+        .position((10, 50))
+        .size((185, 20))
+        .parent(&window)
+        .build(&mut settings.lbl_sample_rate)
+        .map_err(|e| format!("Failed to create label: {:?}", e))?;
+
+    nwg::ComboBox::builder()
+        .collection(vec!["44100".to_string(), "48000".to_string(), "96000".to_string()])
+        .parent(&window)
+        .size((290, 25))
+        .position((200, 50))
+        .build(&mut settings.combo_sample_rate)
+        .map_err(|e| format!("Failed to create combobox: {:?}", e))?;
+
+    nwg::Label::builder()
+        .text("Channels (1-64):")
+        .position((10, 85))
+        .size((185, 20))
+        .parent(&window)
+        .build(&mut settings.lbl_channels)
+        .map_err(|e| format!("Failed to create label: {:?}", e))?;
+
+    nwg::TextInput::builder()
+        .text("2")
+        .position((200, 85))
+        .size((290, 25))
+        .parent(&window)
+        .build(&mut settings.txt_channels)
+        .map_err(|e| format!("Failed to create input: {:?}", e))?;
+
+    nwg::Label::builder()
+        .text("Latency (ms):")
+        .position((10, 120))
+        .size((185, 20))
+        .parent(&window)
+        .build(&mut settings.lbl_latency)
+        .map_err(|e| format!("Failed to create label: {:?}", e))?;
+
+    nwg::TextInput::builder()
+        .text("10")
+        .position((200, 120))
+        .size((290, 25))
+        .parent(&window)
+        .build(&mut settings.txt_latency)
+        .map_err(|e| format!("Failed to create input: {:?}", e))?;
+
+    nwg::Label::builder()
+        .text("WASAPI Device:")
+        .position((10, 155))
+        .size((185, 20))
+        .parent(&window)
+        .build(&mut settings.lbl_wasapi_device)
+        .map_err(|e| format!("Failed to create label: {:?}", e))?;
+
+    nwg::ComboBox::builder()
+        .collection(vec!["Default Device".to_string(), "Speakers".to_string(), "Line In".to_string()])
+        .parent(&window)
+        .size((290, 25))
+        .position((200, 155))
+        .build(&mut settings.combo_wasapi_device)
+        .map_err(|e| format!("Failed to create combobox: {:?}", e))?;
+
+    nwg::Label::builder()
+        .text("Network Interface:")
+        .position((10, 190))
+        .size((185, 20))
+        .parent(&window)
+        .build(&mut settings.lbl_network_interface)
+        .map_err(|e| format!("Failed to create label: {:?}", e))?;
+
+    let nics = settings_window::list_network_interfaces();
+    nwg::ComboBox::builder()
+        .collection(nics)
+        .parent(&window)
+        .size((290, 25))
+        .position((200, 190))
+        .build(&mut settings.combo_network_interface)
+        .map_err(|e| format!("Failed to create combobox: {:?}", e))?;
+
+    nwg::Label::builder()
+        .text("FPP Mode:")
+        .position((10, 225))
+        .size((185, 20))
+        .parent(&window)
+        .build(&mut settings.lbl_fpp)
+        .map_err(|e| format!("Failed to create label: {:?}", e))?;
+
+    nwg::ComboBox::builder()
+        .collection(vec![
+            "Auto (negotiate)".to_string(),
+            "Min Latency (1 packet)".to_string(),
+            "Max Efficiency (64 packets)".to_string(),
+            "Custom...".to_string(),
+        ])
+        .parent(&window)
+        .size((290, 25))
+        .position((200, 225))
+        .build(&mut settings.combo_fpp)
+        .map_err(|e| format!("Failed to create combobox: {:?}", e))?;
+
+    nwg::Label::builder()
+        .text("Custom FPP Value:")
+        .position((10, 260))
+        .size((185, 20))
+        .parent(&window)
+        .build(&mut settings.lbl_custom_fpp)
+        .map_err(|e| format!("Failed to create label: {:?}", e))?;
+    settings.lbl_custom_fpp.set_visible(false);
+
+    nwg::TextInput::builder()
+        .text("")
+        .position((200, 260))
+        .size((290, 25))
+        .parent(&window)
+        .build(&mut settings.txt_custom_fpp)
+        .map_err(|e| format!("Failed to create input: {:?}", e))?;
+    settings.txt_custom_fpp.set_visible(false);
+
+    nwg::Button::builder()
+        .text("Save & Apply")
+        .position((60, 320))
+        .size((120, 32))
+        .parent(&window)
+        .build(&mut settings.btn_save)
+        .map_err(|e| format!("Failed to create button: {:?}", e))?;
+
+    nwg::Button::builder()
+        .text("Cancel")
+        .position((300, 320))
+        .size((100, 32))
+        .parent(&window)
+        .build(&mut settings.btn_cancel)
+        .map_err(|e| format!("Failed to create button: {:?}", e))?;
+
+    // Load current config into window
+    if let Err(e) = settings_window::load_config_into_window(&settings) {
+        nwg::modal_error_message(parent_handle, "Settings", &format!("Failed to load config: {}", e));
+    }
+
+    // Set up event handler - use Arc<Cell> to communicate between handler and main
+    let window_handle = window.handle;
+    let btn_save_handle = settings.btn_save.handle;
+    let btn_cancel_handle = settings.btn_cancel.handle;
+
+    let should_save = std::sync::Arc::new(std::cell::Cell::new(false));
+    let should_close = std::sync::Arc::new(std::cell::Cell::new(false));
+    
+    let settings_rc = Rc::new(std::cell::RefCell::new(settings));
+    let should_save_clone = std::sync::Arc::clone(&should_save);
+    let should_close_clone = std::sync::Arc::clone(&should_close);
+
+    let handler = nwg::full_bind_event_handler(
+        &window_handle,
+        move |evt, _data, handle| {
+            use nwg::Event as E;
+            match evt {
+                E::OnButtonClick => {
+                    if handle == btn_save_handle {
+                        should_save_clone.set(true);
+                        should_close_clone.set(true);
+                    } else if handle == btn_cancel_handle {
+                        should_close_clone.set(true);
+                    }
+                }
+                E::OnWindowClose => {
+                    should_close_clone.set(true);
+                }
+                _ => {}
+            }
+        },
+    );
+
+    // Show window modally by dispatching events
+    nwg::dispatch_thread_events();
+    nwg::unbind_event_handler(&handler);
+
+    // After user closes window, check if they clicked save
+    if should_save.get() {
+        let s = settings_rc.borrow();
+        match settings_window::save_config_from_window(&s) {
+            Ok(()) => {
+                shared_cmd.lock().unwrap().reload = true;
+                nwg::modal_info_message(parent_handle, "Settings", "Configuration saved. Reload triggered.");
+            }
+            Err(e) => {
+                nwg::modal_error_message(parent_handle, "Settings", &format!("Failed to save config: {}", e));
+            }
+        }
+    }
+
+    Ok(())
 }

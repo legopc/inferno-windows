@@ -1,0 +1,458 @@
+    Blocking waiting for file lock on build directory
+warning: unused imports: `SystemTime` and `UNIX_EPOCH`
+  --> usrvclock\src\lib.rs:11:17
+   |
+11 | use std::time::{SystemTime, UNIX_EPOCH};
+   |                 ^^^^^^^^^^  ^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `OVERLAY_SIZE_BYTES` is never used
+  --> usrvclock\src\lib.rs:19:7
+   |
+19 | const OVERLAY_SIZE_BYTES: usize = 40;
+   |       ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `PROTOCOL_MAJOR_VERSION` is never used
+  --> usrvclock\src\lib.rs:20:7
+   |
+20 | const PROTOCOL_MAJOR_VERSION: u16 = 1;
+   |       ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated function `decode` is never used
+  --> usrvclock\src\lib.rs:41:19
+   |
+40 | impl ClockOverlay {
+   | ----------------- associated function in this implementation
+41 |     pub(crate) fn decode(buff: &[u8]) -> Result<Self, OverlayReceiveError> {
+   |                   ^^^^^^
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> searchfire\src\socket.rs:270:14
+    |
+270 |     pub fn recv(&self, buffer: Vec<u8>) -> MdnsSocketRecv {
+    |                 ^^^^^                      ^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                 |
+    |                 the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+270 |     pub fn recv(&self, buffer: Vec<u8>) -> MdnsSocketRecv<'_> {
+    |                                                          ++++
+
+warning: missing documentation for a method
+   --> searchfire\src\broadcast\service.rs:379:2
+    |
+379 |     pub fn add_additional_txt(mut self, name: DnsName, data: Vec<u8>) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> searchfire\src\lib.rs:40:9
+    |
+ 40 | #![warn(missing_docs)]
+    |         ^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> searchfire\src\discovery.rs:184:2
+    |
+184 | /     pub async fn single_query(
+185 | |         self,
+186 | |         types: &[DnsRecordType],
+187 | |         fqdn: &DnsName,
+188 | |         timeout: Duration,
+189 | |         mut filter: impl FnMut(SocketAddr, &DnsResponse) -> bool,
+190 | |     ) -> Result<DnsResponse, MultiIpIoError> {
+    | |____________________________________________^
+
+warning: `usrvclock` (lib) generated 4 warnings (run `cargo fix --lib -p usrvclock` to apply 1 suggestion)
+warning: `searchfire` (lib) generated 3 warnings (run `cargo fix --lib -p searchfire` to apply 1 suggestion)
+    Checking inferno_aoip v0.5.0 (C:\Users\copilot\source\repos\inferno-windows\inferno_aoip)
+warning: unused import: `crate::mdns_client::MdnsClient`
+ --> inferno_aoip\src\device_server\arc_server.rs:4:5
+  |
+4 | use crate::mdns_client::MdnsClient;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `FPP_MAX_ADVERTISED` and `FlowInfo as TXFlowInfo`
+ --> inferno_aoip\src\device_server\arc_server.rs:8:23
+  |
+8 | use super::flows_tx::{FlowInfo as TXFlowInfo, FPP_MAX_ADVERTISED};
+  |                       ^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Endian`
+  --> inferno_aoip\src\device_server\arc_server.rs:22:30
+   |
+22 | use bytebuffer::{ByteBuffer, Endian};
+   |                              ^^^^^^
+
+warning: unused import: `trace`
+  --> inferno_aoip\src\device_server\arc_server.rs:24:24
+   |
+24 | use log::{error, info, trace, warn};
+   |                        ^^^^^
+
+warning: unused imports: `Rng as _` and `thread_rng`
+  --> inferno_aoip\src\device_server\arc_server.rs:25:12
+   |
+25 | use rand::{thread_rng, Rng as _};
+   |            ^^^^^^^^^^  ^^^^^^^^
+
+warning: unused import: `std::net::Ipv4Addr`
+  --> inferno_aoip\src\device_server\arc_server.rs:26:5
+   |
+26 | use std::net::Ipv4Addr;
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::sync::RwLock`
+  --> inferno_aoip\src\device_server\arc_server.rs:27:5
+   |
+27 | use std::sync::RwLock;
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `cmp::min`
+  --> inferno_aoip\src\device_server\arc_server.rs:28:11
+   |
+28 | use std::{cmp::min, sync::Arc};
+   |           ^^^^^^^^
+
+warning: unused import: `bytebuffer::ByteBuffer`
+ --> inferno_aoip\src\device_server\cmc_server.rs:9:5
+  |
+9 | use bytebuffer::ByteBuffer;
+  |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `IpAddr` and `SocketAddr`
+ --> inferno_aoip\src\device_server\flows_control_server.rs:5:16
+  |
+5 | use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+  |                ^^^^^^            ^^^^^^^^^^
+
+warning: unused import: `MAX_FLOWS`
+ --> inferno_aoip\src\device_server\flows_control_server.rs:8:50
+  |
+8 | use super::flows_tx::{FlowsTransmitter, FPP_MAX, MAX_FLOWS};
+  |                                                  ^^^^^^^^^
+
+warning: unused import: `MdnsClient`
+  --> inferno_aoip\src\device_server\mdns_server.rs:12:80
+   |
+12 | use crate::{device_info::DeviceInfo, mdns_client::{self_origin_from_self_info, MdnsClient, PointerToMulticast}, utils::LogAndForget};
+   |                                                                                ^^^^^^^^^^
+
+warning: unused import: `std::num::Wrapping`
+ --> inferno_aoip\src\device_server\flows_tx.rs:2:5
+  |
+2 | use std::num::Wrapping;
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `RwLock`
+ --> inferno_aoip\src\device_server\flows_tx.rs:4:22
+  |
+4 | use std::sync::{Arc, RwLock};
+  |                      ^^^^^^
+
+warning: unused import: `tokio::sync::watch`
+  --> inferno_aoip\src\device_server\flows_tx.rs:13:5
+   |
+13 | use tokio::sync::watch;
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::media_clock::async_clock_receiver_to_realtime`
+  --> inferno_aoip\src\device_server\flows_tx.rs:20:5
+   |
+20 | use crate::media_clock::async_clock_receiver_to_realtime;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `AtomicUsize`
+ --> inferno_aoip\src\device_server\tx_multicasts.rs:2:48
+  |
+2 | use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize};
+  |                                                ^^^^^^^^^^^
+
+warning: unused import: `usrvclock::SafeClock`
+ --> inferno_aoip\src\media_clock.rs:7:5
+  |
+7 | use usrvclock::SafeClock;
+  |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `io::Cursor`
+ --> inferno_aoip\src\protocol\req_resp.rs:5:30
+  |
+5 | use std::{borrow::BorrowMut, io::Cursor};
+  |                              ^^^^^^^^^^
+
+warning: unused imports: `net::Ipv4Addr` and `sync::Arc`
+ --> inferno_aoip\src\state_storage.rs:6:3
+  |
+6 |   sync::Arc,
+  |   ^^^^^^^^^
+7 |   net::Ipv4Addr,
+  |   ^^^^^^^^^^^^^
+
+warning: unused import: `device_info`
+  --> inferno_aoip\src\state_storage.rs:10:24
+   |
+10 | use crate::{common::*, device_info, device_info::DeviceInfo};
+   |                        ^^^^^^^^^^^
+
+warning: unused import: `thread_native_id`
+ --> inferno_aoip\src\util\os.rs:1:23
+  |
+1 | use thread_priority::{thread_native_id, Error, ThreadPriority};
+  |                       ^^^^^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+   --> inferno_aoip\src\device_server\arc_server.rs:291:24
+    |
+291 |             mcast.send(make_channel_change_notification(renamed_indices)).await.log_and_forget();
+    |                   ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MulticastMessage`, found `Option<MulticastMessage>`
+    |                   |
+    |                   arguments to this method are incorrect
+    |
+    = note: expected struct `MulticastMessage`
+                 found enum `std::option::Option<MulticastMessage>`
+help: the return type of this call is `std::option::Option<MulticastMessage>` due to the type of the argument passed
+   --> inferno_aoip\src\device_server\arc_server.rs:291:13
+    |
+291 |             mcast.send(make_channel_change_notification(renamed_indices)).await.log_and_forget();
+    |             ^^^^^^^^^^^-------------------------------------------------^
+    |                        |
+    |                        this argument influences the return type of `send`
+note: method defined here
+   --> C:\Users\copilot\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.51.0\src\sync\mpsc\bounded.rs:816:18
+    |
+816 |     pub async fn send(&self, value: T) -> Result<(), SendError<T>> {
+    |                  ^^^^
+help: consider using `Option::expect` to unwrap the `std::option::Option<MulticastMessage>` value, panicking if the value is an `Option::None`
+    |
+291 |             mcast.send(make_channel_change_notification(renamed_indices).expect("REASON")).await.log_and_forget();
+    |                                                                         +++++++++++++++++
+
+error[E0308]: mismatched types
+   --> inferno_aoip\src\device_server\info_mcast_server.rs:108:28
+    |
+108 |     self.server.send(&dst, pkt).await;
+    |                 ----       ^^^ expected `&[u8]`, found `Result<&[u8], &str>`
+    |                 |
+    |                 arguments to this method are incorrect
+    |
+    = note: expected reference `&[u8]`
+                    found enum `Result<&[u8], &str>`
+note: method defined here
+   --> inferno_aoip\src\util\net.rs:103:16
+    |
+103 |   pub async fn send(&self, dst: &SocketAddr, packet: &[u8]) {
+    |                ^^^^                          -------------
+help: consider using `Result::expect` to unwrap the `Result<&[u8], &str>` value, panicking if the value is a `Result::Err`
+    |
+108 |     self.server.send(&dst, pkt.expect("REASON")).await;
+    |                               +++++++++++++++++
+
+error[E0308]: mismatched types
+   --> inferno_aoip\src\device_server\channels_subscriber.rs:412:21
+    |
+412 |     self.mcast.send(make_channel_change_notification(channel_indices)).await.log_and_forget();
+    |                ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MulticastMessage`, found `Option<MulticastMessage>`
+    |                |
+    |                arguments to this method are incorrect
+    |
+    = note: expected struct `MulticastMessage`
+                 found enum `std::option::Option<MulticastMessage>`
+help: the return type of this call is `std::option::Option<MulticastMessage>` due to the type of the argument passed
+   --> inferno_aoip\src\device_server\channels_subscriber.rs:412:5
+    |
+412 |     self.mcast.send(make_channel_change_notification(channel_indices)).await.log_and_forget();
+    |     ^^^^^^^^^^^^^^^^-------------------------------------------------^
+    |                     |
+    |                     this argument influences the return type of `send`
+note: method defined here
+   --> C:\Users\copilot\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.51.0\src\sync\mpsc\bounded.rs:816:18
+    |
+816 |     pub async fn send(&self, value: T) -> Result<(), SendError<T>> {
+    |                  ^^^^
+help: consider using `Option::expect` to unwrap the `std::option::Option<MulticastMessage>` value, panicking if the value is an `Option::None`
+    |
+412 |     self.mcast.send(make_channel_change_notification(channel_indices).expect("REASON")).await.log_and_forget();
+    |                                                                      +++++++++++++++++
+
+error[E0609]: no field `flows_info` on type `&mut FlowsTransmitterInternal<P>`
+   --> inferno_aoip\src\device_server\flows_tx.rs:401:28
+    |
+401 |           if index >= self.flows_info.len() {
+    |                            ^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `commands_receiver`, `clock_recv`, `sample_rate`, `flows`, `clock` ... and 8 others
+
+error[E0609]: no field `flows_info` on type `&mut FlowsTransmitterInternal<P>`
+   --> inferno_aoip\src\device_server\flows_tx.rs:402:71
+    |
+402 |             error!("flow index {} out of range (max {})", index, self.flows_info.len());
+    |                                                                       ^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `commands_receiver`, `clock_recv`, `sample_rate`, `flows`, `clock` ... and 8 others
+
+error[E0609]: no field `flows_info` on type `&mut FlowsTransmitterInternal<P>`
+   --> inferno_aoip\src\device_server\flows_tx.rs:407:28
+    |
+407 |           if index >= self.flows_info.len() {
+    |                            ^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `commands_receiver`, `clock_recv`, `sample_rate`, `flows`, `clock` ... and 8 others
+
+error[E0609]: no field `flows_info` on type `&mut FlowsTransmitterInternal<P>`
+   --> inferno_aoip\src\device_server\flows_tx.rs:408:71
+    |
+408 |             error!("flow index {} out of range (max {})", index, self.flows_info.len());
+    |                                                                       ^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `commands_receiver`, `clock_recv`, `sample_rate`, `flows`, `clock` ... and 8 others
+
+error: future cannot be sent between threads safely
+   --> inferno_aoip\src\device_server\mod.rs:366:43
+    |
+366 |       let flows_control_task = tokio::spawn(flows_control_server::run_server(
+    |  ___________________________________________^
+367 | |       self.self_info.clone(),
+368 | |       self.flows_tx.clone(),
+369 | |       shutdown_recv,
+370 | |     ));
+    | |_____^ future returned by `run_server` is not `Send`
+    |
+    = help: the trait `std::marker::Send` is not implemented for `dyn StdError`
+note: future is not `Send` as this value is used across an await
+   --> inferno_aoip\src\device_server\flows_control_server.rs:80:54
+    |
+ 76 |           let hostname = match read_0term_str_from_buffer(req_bytes, hostname_offset) {
+    |                                ------------------------------------------------------ has type `Result<&str, Box<dyn StdError>>` which is not `Send`
+...
+ 80 |               conn.respond_with_code(0x0302u16, &[]).await;
+    |                                                      ^^^^^ await occurs here, with `read_0term_str_from_buffer(req_bytes, hostname_offset)` maybe used later
+note: required by a bound in `tokio::spawn`
+   --> C:\Users\copilot\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.51.0\src\task\spawn.rs:176:21
+    |
+174 |     pub fn spawn<F>(future: F) -> JoinHandle<F::Output>
+    |            ----- required by a bound in this function
+175 |     where
+176 |         F: Future + Send + 'static,
+    |                     ^^^^ required by this bound in `spawn`
+
+error[E0277]: `T` cannot be sent between threads safely
+  --> inferno_aoip\src\device_server\drop_channel.rs:23:26
+   |
+23 |       let _ = self.tx.send(Box::new(move || {
+   |                            ^        ------- within this `{closure@inferno_aoip\src\device_server\drop_channel.rs:23:35: 23:42}`
+   |  __________________________|
+   | |
+24 | |       drop(value);
+25 | |     }));
+   | |______^ `T` cannot be sent between threads safely
+   |
+note: required because it's used within this closure
+  --> inferno_aoip\src\device_server\drop_channel.rs:23:35
+   |
+23 |     let _ = self.tx.send(Box::new(move || {
+   |                                   ^^^^^^^
+   = note: required for the cast from `Box<{closure@inferno_aoip\src\device_server\drop_channel.rs:23:35: 23:42}>` to `Box<(dyn FnOnce() + std::marker::Send + 'static)>`
+help: consider further restricting type parameter `T` with trait `Send`
+   |
+22 |   pub fn defer_drop<T: 'static + std::marker::Send>(&self, value: T) {
+   |                                +++++++++++++++++++
+
+warning: unused import: `ProxyToBuffer`
+ --> inferno_aoip\src\device_server\samples_collector.rs:9:5
+  |
+9 |     ProxyToBuffer, ProxyToSamplesBuffer, RBOutput,
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `ProxyToBuffer`
+ --> inferno_aoip\src\device_server\mod.rs:5:45
+  |
+5 | use crate::ring_buffer::{self, OwnedBuffer, ProxyToBuffer, ProxyToSamplesBuffer, RBOutput};
+  |                                             ^^^^^^^^^^^^^
+
+warning: unused import: `std::io::Write`
+  --> inferno_aoip\src\device_server\mod.rs:17:5
+   |
+17 | use std::io::Write;
+   |     ^^^^^^^^^^^^^^
+
+warning: unused variable: `flow_index`
+   --> inferno_aoip\src\device_server\flows_control_server.rs:143:17
+    |
+143 |             Ok((flow_index, handle)) => {
+    |                 ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_flow_index`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `flow_index`
+   --> inferno_aoip\src\device_server\flows_control_server.rs:161:21
+    |
+161 |           if let Ok(flow_index) = flows_tx.lock().await.as_mut().unwrap().remove_flow(handle).await {
+    |                     ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_flow_index`
+
+warning: unused variable: `start_time`
+   --> inferno_aoip\src\device_server\channels_subscriber.rs:254:5
+    |
+254 |     start_time: Clock,
+    |     ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_start_time`
+
+warning: unused variable: `start_time_shift`
+   --> inferno_aoip\src\device_server\channels_subscriber.rs:255:5
+    |
+255 |     start_time_shift: ClockDiff,
+    |     ^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_start_time_shift`
+
+warning: unused variable: `flow_id`
+    --> inferno_aoip\src\device_server\channels_subscriber.rs:1212:25
+     |
+1212 |                     let flow_id = flow.local_id;
+     |                         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_flow_id`
+
+warning: unused variable: `mf`
+    --> inferno_aoip\src\device_server\channels_subscriber.rs:1223:41
+     |
+1223 |                   FlowSource::Multicast(mf) => {
+     |                                         ^^ help: if this is intentional, prefix it with an underscore: `_mf`
+
+error[E0310]: the parameter type `P` may not live long enough
+   --> inferno_aoip\src\device_server\flows_rx.rs:441:17
+    |
+441 |                 self.drop_sender.defer_drop(old_sink);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |                 |
+    |                 the parameter type `P` must be valid for the static lifetime...
+    |                 ...so that the type `P` will meet its required lifetime bounds
+    |
+help: consider adding an explicit lifetime bound
+    |
+126 | impl<P: ProxyToSamplesBuffer + 'static> FlowsReceiverInternal<P> {
+    |                              +++++++++
+
+warning: unused variable: `tx1`
+   --> inferno_aoip\src\device_server\flows_tx.rs:527:9
+    |
+527 |     let tx1 = tx.clone();
+    |         ^^^ help: if this is intentional, prefix it with an underscore: `_tx1`
+
+warning: unused variable: `chi`
+   --> inferno_aoip\src\device_server\samples_collector.rs:357:45
+    |
+357 |       (0..self_info.rx_channels.len()).map(|chi| real_time_box_channel::channel(Box::new(None))).unzip();
+    |                                             ^^^ help: if this is intentional, prefix it with an underscore: `_chi`
+
+warning: unused variable: `connection`
+   --> inferno_aoip\src\protocol\proto_arc.rs:343:3
+    |
+343 |   connection: &mut Connection,
+    |   ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_connection`
+
+Some errors have detailed explanations: E0277, E0308, E0310, E0609.
+For more information about an error, try `rustc --explain E0277`.
+warning: `inferno_aoip` (lib) generated 34 warnings
+error: could not compile `inferno_aoip` (lib) due to 10 previous errors; 34 warnings emitted

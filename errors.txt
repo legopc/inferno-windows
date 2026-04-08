@@ -1,0 +1,825 @@
+"PSMessageDetails","Exception","TargetObject","CategoryInfo","FullyQualifiedErrorId","ErrorDetails","InvocationInfo","ScriptStackTrace","PipelineIterationInfo"
+,"System.Management.Automation.RemoteException:     Blocking waiting for file lock on build directory","    Blocking waiting for file lock on build directory","NotSpecified: (    Blocking waitin… on build directory:String) [], RemoteException","NativeCommandError",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused imports: `SystemTime` and `UNIX_EPOCH`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> usrvclock\src\lib.rs:11:17",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 11 | use std::time::{SystemTime, UNIX_EPOCH};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |                 ^^^^^^^^^^  ^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: constant `OVERLAY_SIZE_BYTES` is never used",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> usrvclock\src\lib.rs:19:7",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 19 | const OVERLAY_SIZE_BYTES: usize = 40;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |       ^^^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: constant `PROTOCOL_MAJOR_VERSION` is never used",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> usrvclock\src\lib.rs:20:7",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 20 | const PROTOCOL_MAJOR_VERSION: u16 = 1;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |       ^^^^^^^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: associated function `decode` is never used",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> usrvclock\src\lib.rs:41:19",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 40 | impl ClockOverlay {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    | ----------------- associated function in this implementation",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 41 |     pub(crate) fn decode(buff: &[u8]) -> Result<Self, OverlayReceiveError> {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |                   ^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: `usrvclock` (lib) generated 4 warnings (run `cargo fix --lib -p usrvclock` to apply 1 suggestion)",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: hiding a lifetime that's elided elsewhere is confusing",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> searchfire\src\socket.rs:270:14",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 270 |     pub fn recv(&self, buffer: Vec<u8>) -> MdnsSocketRecv {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                 ^^^^^                      ^^^^^^^^^^^^^^ the same lifetime is hidden here",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                 |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                 the lifetime is elided here",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     = help: the same lifetime is referred to in inconsistent ways, making the signature confusing",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: help: use `'_` for type paths",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 270 |     pub fn recv(&self, buffer: Vec<u8>) -> MdnsSocketRecv<'_> {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                                                          ++++",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: missing documentation for a method",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> searchfire\src\broadcast\service.rs:379:2",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 379 |     pub fn add_additional_txt(mut self, name: DnsName, data: Vec<u8>) -> Self {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: note: the lint level is defined here",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> searchfire\src\lib.rs:40:9",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  40 | #![warn(missing_docs)]",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |         ^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: missing documentation for a method",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> searchfire\src\discovery.rs:184:2",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 184 | /     pub async fn single_query(",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 185 | |         self,",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 186 | |         types: &[DnsRecordType],",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 187 | |         fqdn: &DnsName,",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 188 | |         timeout: Duration,",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 189 | |         mut filter: impl FnMut(SocketAddr, &DnsResponse) -> bool,",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 190 | |     ) -> Result<DnsResponse, MultiIpIoError> {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     | |____________________________________________^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: `searchfire` (lib) generated 3 warnings (run `cargo fix --lib -p searchfire` to apply 1 suggestion)",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     Checking inferno_aoip v0.5.0 (C:\Users\copilot\source\repos\inferno-windows\inferno_aoip)",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `crate::mdns_client::MdnsClient`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\device_server\arc_server.rs:4:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 4 | use crate::mdns_client::MdnsClient;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused imports: `FPP_MAX_ADVERTISED` and `FlowInfo as TXFlowInfo`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\device_server\arc_server.rs:8:23",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 8 | use super::flows_tx::{FlowInfo as TXFlowInfo, FPP_MAX_ADVERTISED};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |                       ^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `Endian`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\device_server\arc_server.rs:22:30",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 22 | use bytebuffer::{ByteBuffer, Endian};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |                              ^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `trace`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\device_server\arc_server.rs:24:24",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 24 | use log::{error, info, trace, warn};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |                        ^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused imports: `Rng as _` and `thread_rng`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\device_server\arc_server.rs:25:12",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 25 | use rand::{thread_rng, Rng as _};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |            ^^^^^^^^^^  ^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `std::net::Ipv4Addr`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\device_server\arc_server.rs:26:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 26 | use std::net::Ipv4Addr;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |     ^^^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `std::sync::RwLock`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\device_server\arc_server.rs:27:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 27 | use std::sync::RwLock;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |     ^^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `cmp::min`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\device_server\arc_server.rs:28:11",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 28 | use std::{cmp::min, sync::Arc};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |           ^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `bytebuffer::ByteBuffer`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\device_server\cmc_server.rs:9:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 9 | use bytebuffer::ByteBuffer;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |     ^^^^^^^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused imports: `IpAddr` and `SocketAddr`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\device_server\flows_control_server.rs:5:16",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 5 | use std::net::{IpAddr, Ipv4Addr, SocketAddr};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |                ^^^^^^            ^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `MAX_FLOWS`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\device_server\flows_control_server.rs:8:50",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 8 | use super::flows_tx::{FlowsTransmitter, FPP_MAX, MAX_FLOWS};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |                                                  ^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `MdnsClient`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\device_server\mdns_server.rs:12:80",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 12 | use crate::{device_info::DeviceInfo, mdns_client::{self_origin_from_self_info, MdnsClient, PointerToMulticast}, utils::LogAndForget};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |                                                                                ^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `std::num::Wrapping`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\device_server\flows_tx.rs:2:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 2 | use std::num::Wrapping;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |     ^^^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `RwLock`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\device_server\flows_tx.rs:4:22",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 4 | use std::sync::{Arc, RwLock};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |                      ^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `tokio::sync::watch`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\device_server\flows_tx.rs:13:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 13 | use tokio::sync::watch;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |     ^^^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `crate::media_clock::async_clock_receiver_to_realtime`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\device_server\flows_tx.rs:20:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 20 | use crate::media_clock::async_clock_receiver_to_realtime;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `AtomicUsize`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\device_server\tx_multicasts.rs:2:48",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 2 | use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |                                                ^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `usrvclock::SafeClock`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\media_clock.rs:7:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 7 | use usrvclock::SafeClock;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |     ^^^^^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `io::Cursor`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\protocol\req_resp.rs:5:30",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 5 | use std::{borrow::BorrowMut, io::Cursor};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |                              ^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused imports: `net::Ipv4Addr` and `sync::Arc`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\state_storage.rs:6:3",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 6 |   sync::Arc,",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |   ^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 7 |   net::Ipv4Addr,",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |   ^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `device_info`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\state_storage.rs:10:24",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 10 | use crate::{common::*, device_info, device_info::DeviceInfo};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |                        ^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `thread_native_id`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\util\os.rs:1:23",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 1 | use thread_priority::{thread_native_id, Error, ThreadPriority};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |                       ^^^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: error[E0308]: mismatched types",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\arc_server.rs:291:24",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 291 |             mcast.send(make_channel_change_notification(renamed_indices)).await.log_and_forget();",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                   ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MulticastMessage`, found `Option<MulticastMessage>`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                   arguments to this method are incorrect",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     = note: expected struct `MulticastMessage`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:                  found enum `std::option::Option<MulticastMessage>`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: help: the return type of this call is `std::option::Option<MulticastMessage>` due to the type of the argument passed",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\arc_server.rs:291:13",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 291 |             mcast.send(make_channel_change_notification(renamed_indices)).await.log_and_forget();",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |             ^^^^^^^^^^^-------------------------------------------------^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                        |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                        this argument influences the return type of `send`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: note: method defined here",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> C:\Users\copilot\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.51.0\src\sync\mpsc\bounded.rs:816:18",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 816 |     pub async fn send(&self, value: T) -> Result<(), SendError<T>> {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                  ^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: help: consider using `Option::expect` to unwrap the `std::option::Option<MulticastMessage>` value, panicking if the value is an `Option::None`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 291 |             mcast.send(make_channel_change_notification(renamed_indices).expect(""REASON"")).await.log_and_forget();",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                                                                         +++++++++++++++++",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: error[E0308]: mismatched types",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\info_mcast_server.rs:108:28",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 108 |     self.server.send(&dst, pkt).await;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                 ----       ^^^ expected `&[u8]`, found `Result<&[u8], &str>`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                 |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                 arguments to this method are incorrect",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     = note: expected reference `&[u8]`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:                     found enum `Result<&[u8], &str>`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: note: method defined here",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\util\net.rs:103:16",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 103 |   pub async fn send(&self, dst: &SocketAddr, packet: &[u8]) {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                ^^^^                          -------------",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: help: consider using `Result::expect` to unwrap the `Result<&[u8], &str>` value, panicking if the value is a `Result::Err`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 108 |     self.server.send(&dst, pkt.expect(""REASON"")).await;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                               +++++++++++++++++",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: error[E0308]: mismatched types",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\channels_subscriber.rs:412:21",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 412 |     self.mcast.send(make_channel_change_notification(channel_indices)).await.log_and_forget();",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MulticastMessage`, found `Option<MulticastMessage>`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                arguments to this method are incorrect",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     = note: expected struct `MulticastMessage`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:                  found enum `std::option::Option<MulticastMessage>`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: help: the return type of this call is `std::option::Option<MulticastMessage>` due to the type of the argument passed",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\channels_subscriber.rs:412:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 412 |     self.mcast.send(make_channel_change_notification(channel_indices)).await.log_and_forget();",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |     ^^^^^^^^^^^^^^^^-------------------------------------------------^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                     this argument influences the return type of `send`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: note: method defined here",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> C:\Users\copilot\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.51.0\src\sync\mpsc\bounded.rs:816:18",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 816 |     pub async fn send(&self, value: T) -> Result<(), SendError<T>> {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                  ^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: help: consider using `Option::expect` to unwrap the `std::option::Option<MulticastMessage>` value, panicking if the value is an `Option::None`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 412 |     self.mcast.send(make_channel_change_notification(channel_indices).expect(""REASON"")).await.log_and_forget();",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                                                                      +++++++++++++++++",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: error: future cannot be sent between threads safely",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\mod.rs:366:43",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 366 |       let flows_control_task = tokio::spawn(flows_control_server::run_server(",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |  ___________________________________________^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 367 | |       self.self_info.clone(),",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 368 | |       self.flows_tx.clone(),",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 369 | |       shutdown_recv,",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 370 | |     ));",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     | |_____^ future returned by `run_server` is not `Send`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     = help: the trait `std::marker::Send` is not implemented for `dyn StdError`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: note: future is not `Send` as this value is used across an await",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\flows_control_server.rs:80:54",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  76 |           let hostname = match read_0term_str_from_buffer(req_bytes, hostname_offset) {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                                ------------------------------------------------------ has type `Result<&str, Box<dyn StdError>>` which is not `Send`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: ...",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  80 |               conn.respond_with_code(0x0302u16, &[]).await;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                                                      ^^^^^ await occurs here, with `read_0term_str_from_buffer(req_bytes, hostname_offset)` maybe used later",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: note: required by a bound in `tokio::spawn`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> C:\Users\copilot\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.51.0\src\task\spawn.rs:176:21",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 174 |     pub fn spawn<F>(future: F) -> JoinHandle<F::Output>",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |            ----- required by a bound in this function",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 175 |     where",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 176 |         F: Future + Send + 'static,",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                     ^^^^ required by this bound in `spawn`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: error[E0277]: `T` cannot be sent between threads safely",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\device_server\drop_channel.rs:22:26",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 22 |       let _ = self.tx.send(Box::new(move || {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |                            ^        ------- within this `{closure@inferno_aoip\src\device_server\drop_channel.rs:22:35: 22:42}`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |  __________________________|",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    | |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 23 | |       drop(value);",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 24 | |     }));",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    | |______^ `T` cannot be sent between threads safely",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: note: required because it's used within this closure",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\device_server\drop_channel.rs:22:35",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 22 |     let _ = self.tx.send(Box::new(move || {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |                                   ^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    = note: required for the cast from `Box<{closure@inferno_aoip\src\device_server\drop_channel.rs:22:35: 22:42}>` to `Box<(dyn FnOnce() + std::marker::Send + 'static)>`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: help: consider further restricting type parameter `T` with trait `Send`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 21 |   pub fn defer_drop<T: 'static + std::marker::Send>(&self, value: T) {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |                                +++++++++++++++++++",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `ProxyToBuffer`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\device_server\samples_collector.rs:9:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 9 |     ProxyToBuffer, ProxyToSamplesBuffer, RBOutput,",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |     ^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `ProxyToBuffer`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:  --> inferno_aoip\src\device_server\mod.rs:5:45",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 5 | use crate::ring_buffer::{self, OwnedBuffer, ProxyToBuffer, ProxyToSamplesBuffer, RBOutput};",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   |                                             ^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused import: `std::io::Write`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:   --> inferno_aoip\src\device_server\mod.rs:17:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 17 | use std::io::Write;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    |     ^^^^^^^^^^^^^^",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused variable: `flow_index`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\flows_control_server.rs:143:17",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 143 |             Ok((flow_index, handle)) => {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                 ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_flow_index`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused variable: `flow_index`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\flows_control_server.rs:161:21",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 161 |           if let Ok(flow_index) = flows_tx.lock().await.as_mut().unwrap().remove_flow(handle).await {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                     ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_flow_index`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused variable: `start_time`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\channels_subscriber.rs:254:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 254 |     start_time: Clock,",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |     ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_start_time`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused variable: `start_time_shift`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\channels_subscriber.rs:255:5",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 255 |     start_time_shift: ClockDiff,",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |     ^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_start_time_shift`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused variable: `flow_id`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     --> inferno_aoip\src\device_server\channels_subscriber.rs:1212:25",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:      |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 1212 |                     let flow_id = flow.local_id;",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:      |                         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_flow_id`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused variable: `mf`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     --> inferno_aoip\src\device_server\channels_subscriber.rs:1223:41",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:      |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 1223 |                   FlowSource::Multicast(mf) => {",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:      |                                         ^^ help: if this is intentional, prefix it with an underscore: `_mf`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused variable: `tx1`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\flows_tx.rs:510:9",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 510 |     let tx1 = tx.clone();",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |         ^^^ help: if this is intentional, prefix it with an underscore: `_tx1`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused variable: `chi`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\device_server\samples_collector.rs:357:45",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 357 |       (0..self_info.rx_channels.len()).map(|chi| real_time_box_channel::channel(Box::new(None))).unzip();",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |                                             ^^^ help: if this is intentional, prefix it with an underscore: `_chi`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: unused variable: `connection`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:    --> inferno_aoip\src\protocol\proto_arc.rs:343:3",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: 343 |   connection: &mut Connection,",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException:     |   ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_connection`",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: Some errors have detailed explanations: E0277, E0308.",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: For more information about an error, try `rustc --explain E0277`.",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: warning: `inferno_aoip` (lib) generated 34 warnings",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"
+,"System.Management.Automation.RemoteException: error: could not compile `inferno_aoip` (lib) due to 5 previous errors; 34 warnings emitted",,"NotSpecified: (:) [], RemoteException","NativeCommandErrorMessage",,"System.Management.Automation.InvocationInfo","at <ScriptBlock>, <No file>: line 2
+at <ScriptBlock>, <No file>: line 1","System.Collections.ObjectModel.ReadOnlyCollection`1[System.Int32]"

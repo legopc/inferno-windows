@@ -1,0 +1,36 @@
+commit 609715d82985c6de2d68513262bfe24f274aee91
+Author: Copilot <copilot@legopc.dev>
+Date:   Wed Apr 8 09:21:25 2026 +0200
+
+    feat: make ring buffer size and latency ref configurable in config.toml
+
+diff --git a/inferno_aoip/src/device_server/mod.rs b/inferno_aoip/src/device_server/mod.rs
+index 4a13626..2f2e157 100644
+--- a/inferno_aoip/src/device_server/mod.rs
++++ b/inferno_aoip/src/device_server/mod.rs
+@@ -104,7 +104,6 @@ pub struct DeviceServer {
+   tx_multicasts_by_channel: Arc<RwLock<BTreeMap<usize, PointerToMulticast>>>,
+   rx_peaks_supplier: Arc<RwLock<Box<dyn Fn() -> Vec<u8> + Send + Sync>>>,
+   tx_peaks_supplier: Arc<RwLock<Box<dyn Fn() -> Vec<u8> + Send + Sync>>>,
+-  drop_sender: drop_channel::RealTimeDropSender,
+   shutdown_todo: Pin<Box<dyn Future<Output = ()> + Send>>,
+   tx_shutdown_todo: Option<Pin<Box<dyn Future<Output = ()> + Send>>>,
+   rx_shutdown_todo: Option<Pin<Box<dyn Future<Output = ()> + Send>>>,
+@@ -137,9 +136,6 @@ impl DeviceServer {
+     let shared_media_clock = make_shared_media_clock(&clock_receiver, settings.use_safe_clock).await;
+     info!("clock ready");
+ 
+-    // Spawn background drop handler for RT thread deallocation
+-    let drop_sender = drop_channel::spawn_drop_handler();
+-
+     let mut tasks = vec![];
+ 
+     let (channels_sub_tx, channels_sub_rx) = watch::channel(None);
+@@ -204,7 +200,6 @@ impl DeviceServer {
+       tx_multicasts_by_channel,
+       rx_peaks_supplier,
+       tx_peaks_supplier,
+-      drop_sender,
+       //tasks,
+       //tx_inputs,
+       shutdown_todo,
