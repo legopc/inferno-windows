@@ -98,13 +98,30 @@ Wave B (after Wave A — depend on ptp module):
 
 ## Sprint 6 — Installer, CI & Distribution
 
-*(Pending Sprint 5 completion)*
+**Goal**: Automated build pipeline producing installable artifacts; improved first-run UX.
+
+| Agent ID | Model | Task | Outcome |
+|---|---|---|---|
+| `s6-ci-pipeline` | claude-haiku-4.5 (Fleet Worker) | Update ci.yml: choco install wixtoolset + cargo wix + MSI artifact upload; create release.yml for tag-triggered releases | ✅ Committed `ce980d7` |
+| `s6-first-run-wizard` | claude-haiku-4.5 (Fleet Worker) | 3-step NWG wizard (NIC → firewall → finish); writes config.toml on completion; wired into main() | ✅ Committed `2d2e802` |
+| `s6-firewall-setup` | claude-haiku-4.5 (Fleet Worker) | `--setup-firewall` CLI flag; `inferno_wasapi/src/firewall.rs` via netsh for all UDP ports | ✅ Committed `a2de23f` |
+
+**Sprint 6 Outcome**: ✅ All 3 todos done. Build green. Pushed `9a4ff91`.
 
 ---
 
 ## Sprint 7 — DVS Feature Parity & Advanced
 
-*(Pending Sprint 6 completion)*
+**Goal**: Match Dante Virtual Soundcard feature set; add power-user capabilities.
+
+| Agent ID | Model | Task | Outcome |
+|---|---|---|---|
+| `s7-asio-scaffold` | claude-haiku-4.5 (Fleet Worker) | `docs/ASIO.md` (ASIO4ALL guide, native ASIO roadmap); scaffold `inferno_asio/` stub crate | ✅ Committed `ce980d7` |
+| `s7-soak-test` | claude-haiku-4.5 (Fleet Worker) | `scripts/soak_test.ps1` 8h overnight harness; CSV logging; `scripts/README.md`; CONTRIBUTING.md update | ✅ Committed `ce980d7` |
+| `s7-96khz-validate` | claude-haiku-4.5 (Fleet Worker) | 96kHz channel limit warning (>32ch); config validation; NOTES.md + README update | ✅ Committed `ff14973` |
+| `s7-windows-notifications` | claude-haiku-4.5 (Fleet Worker) | Windows balloon notifications: service start, RX active, audio glitch, new flow detected | ✅ Committed `9a4ff91` |
+
+**Sprint 7 Outcome**: ✅ All 4 todos done. Build green. Pushed `9a4ff91`.
 
 ---
 
