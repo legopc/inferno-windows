@@ -46,7 +46,7 @@ Wave B (after Wave A — adds to main window):
 
 | Agent ID | Model | Task | Outcome |
 |---|---|---|---|
-| `s2-vu-meters` | claude-haiku-4.5 (Fleet Worker) | Real-time per-channel VU meter progress bars in main window (10fps) | 🔄 Running |
+| `s2-vu-meters` | claude-haiku-4.5 (Fleet Worker) | Real-time per-channel VU meter progress bars in main window (10fps) | ✅ Committed |
 | `s2-flows-panel` | claude-haiku-4.5 (Fleet Worker) | Active flows list panel in main window using GetFlows IPC | 🔄 Running |
 
 ---
