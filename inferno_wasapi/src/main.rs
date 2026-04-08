@@ -982,6 +982,8 @@ async fn main() -> Result<()> {
         sample_rate: args.sample_rate,
         clock_mode: "SafeClock".to_string(),
         tx_peak_db: vec![],
+        rx_flows: vec![],
+        tx_flows: vec![],
         ..Default::default()
     }));
     let (ipc_shutdown_tx, mut ipc_shutdown_rx) = tokio::sync::watch::channel(false);

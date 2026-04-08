@@ -8,6 +8,17 @@ use tokio::net::windows::named_pipe::ServerOptions;
 
 pub const PIPE_NAME: &str = r"\\.\pipe\inferno";
 
+/// Active RX/TX flow information
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FlowInfo {
+    pub name: String,
+    pub source_ip: String,
+    pub channels: u32,
+    pub sample_rate: u32,
+    pub direction: String,  // "rx" or "tx"
+    pub state: String,      // "active", "pending", "error"
+}
+
 /// Runtime state of the audio service, shared between the audio engine and IPC handlers.
 #[derive(Default, Clone)]
 pub struct ServiceState {
@@ -20,6 +31,8 @@ pub struct ServiceState {
     pub tx_peak_db: Vec<f32>,
     pub dante_peers: Vec<String>,
     pub reload_requested: bool,
+    pub rx_flows: Vec<FlowInfo>,
+    pub tx_flows: Vec<FlowInfo>,
 }
 
 pub type SharedState = Arc<tokio::sync::RwLock<ServiceState>>;
@@ -42,6 +55,13 @@ pub enum StatusMessage {
     Error { message: String },
     /// Tray -> Service: request status
     GetStatus,
+    /// Tray -> Service: request active flows
+    GetFlows,
+    /// Service -> Tray: active RX/TX flows
+    Flows {
+        rx: Vec<FlowInfo>,
+        tx: Vec<FlowInfo>,
+    },
     /// Tray -> Service: reload config
     ReloadConfig,
     /// Tray -> Service: graceful shutdown
@@ -82,6 +102,23 @@ async fn handle_client(
                     },
                     tx_peak_db: s.tx_peak_db.clone(),
                     uptime_secs: start_time.elapsed().as_secs(),
+                };
+                drop(s);
+                match serde_json::to_string(&response) {
+                    Ok(json) => {
+                        if let Err(e) = writer.write_all(format!("{json}\n").as_bytes()).await {
+                            tracing::warn!("IPC: write error: {e}");
+                            break;
+                        }
+                    }
+                    Err(e) => tracing::error!("IPC: serialization error: {e}"),
+                }
+            }
+            StatusMessage::GetFlows => {
+                let s = state.read().await;
+                let response = StatusMessage::Flows {
+                    rx: s.rx_flows.clone(),
+                    tx: s.tx_flows.clone(),
                 };
                 drop(s);
                 match serde_json::to_string(&response) {
