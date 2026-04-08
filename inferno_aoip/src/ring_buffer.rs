@@ -468,7 +468,6 @@ pub fn new_owned<T: Default>(
 ) -> (RBInput<T, OwnedBuffer<Atomic<T>>>, RBOutput<T, OwnedBuffer<Atomic<T>>>) {
   let aligned_length = length.next_power_of_two();
   let shared = RingBufferShared::new(OwnedBuffer::<Atomic<T>>::new(aligned_length), 1, start_time, None);
-  assert!(shared.items_size.is_power_of_two(), "ring buffer size must be power of 2, got {}", shared.items_size);
   (
     RBInput { rb: shared.clone(), item_ready: boolvec![false; shared.items_size], hole_fix_wait },
     RBOutput { rb: shared },
