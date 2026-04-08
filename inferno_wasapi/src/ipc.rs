@@ -1,11 +1,28 @@
 //! Named pipe IPC between inferno service and tray GUI.
 //! Protocol: newline-delimited JSON messages.
 
+use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::windows::named_pipe::ServerOptions;
 
 pub const PIPE_NAME: &str = r"\\.\pipe\inferno";
+
+/// Runtime state of the audio service, shared between the audio engine and IPC handlers.
+#[derive(Default, Clone)]
+pub struct ServiceState {
+    pub rx_active: bool,
+    pub tx_active: bool,
+    pub rx_channels: u32,
+    pub tx_channels: u32,
+    pub sample_rate: u32,
+    pub clock_mode: String,
+    pub tx_peak_db: Vec<f32>,
+    pub dante_peers: Vec<String>,
+    pub reload_requested: bool,
+}
+
+pub type SharedState = Arc<tokio::sync::RwLock<ServiceState>>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -34,9 +51,8 @@ pub enum StatusMessage {
 async fn handle_client(
     pipe: tokio::net::windows::named_pipe::NamedPipeServer,
     start_time: std::time::Instant,
-    tx_channels: u32,
-    rx_channels: u32,
-    sample_rate: u32,
+    state: SharedState,
+    shutdown_tx: tokio::sync::watch::Sender<bool>,
 ) {
     let (reader, mut writer) = tokio::io::split(pipe);
     let mut lines = BufReader::new(reader).lines();
@@ -52,16 +68,22 @@ async fn handle_client(
 
         match msg {
             StatusMessage::GetStatus => {
+                let s = state.read().await;
                 let response = StatusMessage::Status {
-                    tx_active: true,
-                    rx_active: true,
-                    tx_channels,
-                    rx_channels,
-                    sample_rate,
-                    clock_mode: "SafeClock".to_string(),
-                    tx_peak_db: vec![-60.0; tx_channels as usize],
+                    tx_active: s.tx_active,
+                    rx_active: s.rx_active,
+                    tx_channels: s.tx_channels,
+                    rx_channels: s.rx_channels,
+                    sample_rate: s.sample_rate,
+                    clock_mode: if s.clock_mode.is_empty() {
+                        "SafeClock".to_string()
+                    } else {
+                        s.clock_mode.clone()
+                    },
+                    tx_peak_db: s.tx_peak_db.clone(),
                     uptime_secs: start_time.elapsed().as_secs(),
                 };
+                drop(s);
                 match serde_json::to_string(&response) {
                     Ok(json) => {
                         if let Err(e) = writer.write_all(format!("{json}\n").as_bytes()).await {
@@ -74,9 +96,11 @@ async fn handle_client(
             }
             StatusMessage::Shutdown => {
                 tracing::info!("IPC: shutdown requested by client");
+                shutdown_tx.send(true).ok();
             }
             StatusMessage::ReloadConfig => {
                 tracing::info!("IPC: reload config requested");
+                state.write().await.reload_requested = true;
             }
             other => {
                 tracing::debug!("IPC: unexpected message variant: {:?}", other);
@@ -90,9 +114,8 @@ async fn handle_client(
 /// then create a fresh server instance for the next client.
 pub async fn start_ipc_server(
     start_time: std::time::Instant,
-    tx_channels: u32,
-    rx_channels: u32,
-    sample_rate: u32,
+    state: SharedState,
+    shutdown_tx: tokio::sync::watch::Sender<bool>,
 ) {
     tracing::info!("IPC server listening on {}", PIPE_NAME);
 
@@ -138,9 +161,8 @@ pub async fn start_ipc_server(
         tokio::spawn(handle_client(
             connected,
             start_time,
-            tx_channels,
-            rx_channels,
-            sample_rate,
+            state.clone(),
+            shutdown_tx.clone(),
         ));
     }
 }

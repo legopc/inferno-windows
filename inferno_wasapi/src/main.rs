@@ -615,6 +615,122 @@ async fn list_dante_devices() -> Result<()> {
     Ok(())
 }
 
+/// Core audio service logic: starts WASAPI render, Dante receiver, and IPC server.
+/// Called from both `main()` (RX mode) and `service.rs` (Windows Service mode).
+pub async fn run_audio_service(
+    config: Config,
+    mut ext_shutdown: tokio::sync::watch::Receiver<bool>,
+) -> anyhow::Result<()> {
+    let dante_device_name = if config.device_name.is_empty() || config.device_name == "InfernoAoIP" {
+        hostname::get()
+            .map(|h| h.to_string_lossy().into_owned())
+            .unwrap_or_else(|_| "inferno-wasapi".to_owned())
+    } else {
+        config.device_name.clone()
+    };
+
+    let channels = config.channels as usize;
+    let sample_rate = config.sample_rate;
+
+    let mut dante_config: BTreeMap<String, String> = BTreeMap::new();
+    dante_config.insert("RX_CHANNELS".to_owned(), channels.to_string());
+    dante_config.insert("TX_CHANNELS".to_owned(), "0".to_owned());
+    dante_config.insert("SAMPLE_RATE".to_owned(), sample_rate.to_string());
+    dante_config.insert("NAME".to_owned(), dante_device_name.clone());
+
+    let settings = Settings::new("inferno_wasapi", "InfernoWASPI", None, &dante_config);
+    info!("Audio service: device={dante_device_name} rate={sample_rate}Hz channels={channels}");
+
+    let audio_queue: Arc<Mutex<VecDeque<i32>>> =
+        Arc::new(Mutex::new(VecDeque::with_capacity(sample_rate as usize / 4 * channels)));
+    let audio_queue_wasapi = audio_queue.clone();
+    let audio_queue_dante = audio_queue.clone();
+
+    let shutdown = Arc::new(AtomicBool::new(false));
+    let shutdown_wasapi = shutdown.clone();
+
+    let ipc_state: ipc::SharedState = Arc::new(tokio::sync::RwLock::new(ipc::ServiceState {
+        rx_channels: channels as u32,
+        tx_channels: 0,
+        sample_rate,
+        clock_mode: "SafeClock".to_string(),
+        ..Default::default()
+    }));
+
+    let (ready_tx, ready_rx) = std::sync::mpsc::sync_channel(1);
+    let config_wasapi = config.clone();
+    let wasapi_thread = std::thread::Builder::new()
+        .name("wasapi-render".into())
+        .spawn(move || {
+            wasapi_render_thread(
+                None, false, sample_rate, channels,
+                audio_queue_wasapi, shutdown_wasapi, ready_tx, config_wasapi,
+            );
+        })?;
+
+    match ready_rx.recv() {
+        Ok(Ok(dev_name)) => {
+            info!("WASAPI ready: {dev_name}");
+            ipc_state.write().await.rx_active = true;
+        }
+        Ok(Err(e)) => {
+            shutdown.store(true, Ordering::Relaxed);
+            wasapi_thread.join().ok();
+            return Err(anyhow!("WASAPI init failed: {e}"));
+        }
+        Err(_) => {
+            shutdown.store(true, Ordering::Relaxed);
+            wasapi_thread.join().ok();
+            return Err(anyhow!("WASAPI thread died before signalling ready"));
+        }
+    }
+
+    let mut server = DeviceServer::start(settings).await;
+    info!("Dante device server started");
+
+    let ipc_start_time = std::time::Instant::now();
+    let (ipc_shutdown_tx, mut ipc_shutdown_rx) = tokio::sync::watch::channel(false);
+    tokio::spawn(ipc::start_ipc_server(ipc_start_time, ipc_state, ipc_shutdown_tx));
+
+    let max_queue = sample_rate as usize / 4 * channels;
+    let channels_cb = channels;
+    server.receive_with_callback(Box::new(move |num_samples, channel_data| {
+        let mut q = audio_queue_dante.lock().unwrap();
+        if q.len() >= max_queue {
+            warn!("Audio queue full ({} samples), dropping {}", q.len(), num_samples * channels_cb);
+            return;
+        }
+        for frame in 0..num_samples {
+            for ch in 0..channels_cb {
+                let sample = channel_data.get(ch).and_then(|c| c.get(frame)).copied().unwrap_or(0);
+                q.push_back(sample);
+            }
+        }
+    })).await;
+
+    let svc_metrics = metrics::Metrics::new();
+    tokio::spawn(metrics::serve_metrics(svc_metrics));
+    tokio::spawn(network_health::run_health_monitor());
+
+    info!("Audio service running (Dante -> WASAPI)");
+
+    tokio::select! {
+        res = ext_shutdown.changed() => {
+            if res.is_ok() { info!("External shutdown signal received"); }
+        }
+        res = ipc_shutdown_rx.changed() => {
+            if res.is_ok() { info!("IPC shutdown received"); }
+        }
+    }
+
+    shutdown.store(true, Ordering::Relaxed);
+    server.stop_receiver().await;
+    server.shutdown().await;
+    wasapi_thread.join().ok();
+    info!("Audio service shutdown complete");
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // Install panic hook before anything else
@@ -845,10 +961,18 @@ async fn main() -> Result<()> {
 
     // Spawn IPC server for tray communication
     let ipc_start_time = std::time::Instant::now();
-    let ipc_rx_channels = args.channels as u32;
-    let ipc_tx_channels = 0u32;
-    let ipc_sample_rate = args.sample_rate;
-    tokio::spawn(ipc::start_ipc_server(ipc_start_time, ipc_tx_channels, ipc_rx_channels, ipc_sample_rate));
+    let ipc_state: ipc::SharedState = Arc::new(tokio::sync::RwLock::new(ipc::ServiceState {
+        rx_active: true,
+        tx_active: false,
+        rx_channels: args.channels as u32,
+        tx_channels: 0,
+        sample_rate: args.sample_rate,
+        clock_mode: "SafeClock".to_string(),
+        tx_peak_db: vec![],
+        ..Default::default()
+    }));
+    let (ipc_shutdown_tx, mut ipc_shutdown_rx) = tokio::sync::watch::channel(false);
+    tokio::spawn(ipc::start_ipc_server(ipc_start_time, ipc_state, ipc_shutdown_tx));
 
     let channels_cb = args.channels;
     let max_queue = args.sample_rate as usize / 4 * args.channels; // 250ms buffer — sufficient for Dante latency targets
@@ -876,8 +1000,15 @@ async fn main() -> Result<()> {
 
     info!("Streaming Dante -> WASAPI. Press Ctrl+C to stop.");
 
-    tokio::signal::ctrl_c().await.ok();
-    info!("Ctrl+C received, shutting down");
+    tokio::select! {
+        _ = tokio::signal::ctrl_c() => {
+            info!("Ctrl+C received, shutting down");
+        }
+        res = ipc_shutdown_rx.changed() => {
+            if res.is_ok() { info!("IPC shutdown received"); }
+        }
+    }
+    info!("Shutting down");
 
     shutdown.store(true, Ordering::Relaxed);
     server.stop_receiver().await;

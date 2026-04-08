@@ -7,8 +7,6 @@ use windows_service::{
     service_control_handler::{self, ServiceControlHandlerResult},
     service_dispatcher,
 };
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 use std::time::Duration;
 
 const SERVICE_NAME: &str = "InfernoAoIP";
@@ -27,13 +25,14 @@ fn service_main(_arguments: Vec<std::ffi::OsString>) {
 }
 
 fn run_service() -> Result<(), Box<dyn std::error::Error>> {
-    let running = Arc::new(AtomicBool::new(true));
-    let running_clone = running.clone();
+    // Create a watch channel so the Windows service control handler can signal shutdown.
+    let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
+    let shutdown_tx_clone = shutdown_tx.clone();
 
     let event_handler = move |control_event| -> ServiceControlHandlerResult {
         match control_event {
             ServiceControl::Stop | ServiceControl::Shutdown => {
-                running_clone.store(false, Ordering::SeqCst);
+                shutdown_tx_clone.send(true).ok();
                 ServiceControlHandlerResult::NoError
             }
             ServiceControl::Interrogate => ServiceControlHandlerResult::NoError,
@@ -55,15 +54,11 @@ fn run_service() -> Result<(), Box<dyn std::error::Error>> {
 
     tracing::info!("InfernoAoIP service started");
 
-    // Run the main logic in a tokio runtime
+    let config = crate::Config::load();
     let rt = tokio::runtime::Runtime::new()?;
-    rt.block_on(async {
-        // Import and call the existing main logic
-        // For now, just wait until stop signal
-        while running.load(Ordering::SeqCst) {
-            tokio::time::sleep(Duration::from_millis(500)).await;
-        }
-    });
+    if let Err(e) = rt.block_on(crate::run_audio_service(config, shutdown_rx)) {
+        tracing::error!("Audio service error: {e}");
+    }
 
     status_handle.set_service_status(ServiceStatus {
         service_type: SERVICE_TYPE,
