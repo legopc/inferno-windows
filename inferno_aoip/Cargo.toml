@@ -50,3 +50,7 @@ features = ["net", "time", "sync", "signal"]
 [dependencies.windows]
 version = "0.51"
 features = ["Win32_Networking_WinSock"]
+
+[features]
+default = []
+ptp = []

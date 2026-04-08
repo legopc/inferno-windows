@@ -102,6 +102,9 @@ mod ring_buffer;
 mod state_storage;
 mod util;
 
+#[cfg(feature = "ptp")]
+pub mod ptp;
+
 pub use util::bytes as byte_utils;
 pub use util::net as net_utils;
 
