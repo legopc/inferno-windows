@@ -13,6 +13,17 @@ use clap::Parser;
 use std::io::Write;
 use wasapi::*;
 
+// Configuration constants
+const EVENT_WAIT_TIMEOUT_MS: u32 = 200;
+const STATS_LOG_INTERVAL_SECS: u64 = 5;
+// Format bits — documented for future reference and format validation
+#[allow(dead_code)]
+const SAMPLE_FORMAT_BITS: u16 = 16;
+#[allow(dead_code)]
+const FLOAT_FORMAT_BITS: u16 = 32;
+#[allow(dead_code)]
+const PCM_INT_FORMAT_BITS: u16 = 24;
+
 #[derive(Parser, Debug)]
 #[command(about = "Pipe InfernoAoIP audio to stdout as raw PCM")]
 struct Args {
@@ -34,7 +45,11 @@ struct Args {
 }
 
 fn open_wasapi_device(device_name_filter: &Option<String>) -> Result<Device> {
-    let _ = initialize_mta();
+    // Initialize COM threading model (MTA); return type is HRESULT, not Result
+    let mta_result = initialize_mta();
+    if !mta_result.is_ok() {
+        tracing::warn!("MTA initialization returned: {:?} (continuing anyway)", mta_result);
+    }
     
     if let Some(ref filter) = device_name_filter {
         if !filter.is_empty() {
@@ -49,7 +64,11 @@ fn open_wasapi_device(device_name_filter: &Option<String>) -> Result<Device> {
                             tracing::info!("Using WASAPI device: {}", name);
                             return Ok(device);
                         }
+                    } else {
+                        tracing::debug!("Device enumeration: failed to read friendly name");
                     }
+                } else {
+                    tracing::debug!("Device enumeration: failed to get device from collection");
                 }
             }
             tracing::warn!("Device filter '{}' not found; using default", filter);
@@ -59,24 +78,33 @@ fn open_wasapi_device(device_name_filter: &Option<String>) -> Result<Device> {
     // Use default render (loopback) device
     let device = get_default_device(&Direction::Render)
         .map_err(|e| anyhow!("Failed to get default WASAPI device: {e}"))?;
-    let name = device.get_friendlyname().unwrap_or_else(|_| "Unknown".into());
+    let name = device.get_friendlyname()
+        .unwrap_or_else(|e| {
+            tracing::debug!("Failed to get default device friendly name: {}", e);
+            "Unknown".into()
+        });
     tracing::info!("Using default WASAPI loopback device: {}", name);
     Ok(device)
 }
 
 fn capture_loop(channels: u16, _rate: u32, duration_secs: u64, device_name_filter: Option<String>) -> Result<()> {
     let device = open_wasapi_device(&device_name_filter)?;
-    let device_name = device.get_friendlyname().unwrap_or_else(|_| "Unknown".into());
+    let device_name = device.get_friendlyname()
+        .unwrap_or_else(|e| {
+            tracing::debug!("Failed to get device friendly name on capture loop: {}", e);
+            "Unknown".into()
+        });
 
     let mut audio_client = device.get_iaudioclient()
-        .map_err(|e| anyhow!("get_iaudioclient: {e}"))?;
+        .map_err(|e| anyhow!("get_iaudioclient on device '{}': {}", device_name, e))?;
 
     // Get the device's mix format
     let mix_fmt = audio_client.get_mixformat()
-        .map_err(|e| anyhow!("get_mixformat: {e}"))?;
+        .map_err(|e| anyhow!("get_mixformat on device '{}': {}", device_name, e))?;
     
     tracing::info!(
-        "WASAPI loopback mix format: {}bit {}Hz {}ch",
+        "WASAPI loopback mix format on '{}': {}bit {}Hz {}ch",
+        device_name,
         mix_fmt.get_bitspersample(),
         mix_fmt.get_samplespersec(),
         mix_fmt.get_nchannels()
@@ -100,17 +128,17 @@ fn capture_loop(channels: u16, _rate: u32, duration_secs: u64, device_name_filte
         &ShareMode::Shared,
         true,  // loopback flag
     )
-    .map_err(|e| anyhow!("initialize_client (loopback): {e}"))?;
+    .map_err(|e| anyhow!("initialize_client (loopback) on '{}': {}", device_name, e))?;
 
     let capture_client = audio_client.get_audiocaptureclient()
-        .map_err(|e| anyhow!("get_audiocaptureclient: {e}"))?;
+        .map_err(|e| anyhow!("get_audiocaptureclient on '{}': {}", device_name, e))?;
     let h_event = audio_client.set_get_eventhandle()
-        .map_err(|e| anyhow!("set_get_eventhandle: {e}"))?;
+        .map_err(|e| anyhow!("set_get_eventhandle on '{}': {}", device_name, e))?;
     audio_client.start_stream()
-        .map_err(|e| anyhow!("start_stream: {e}"))?;
+        .map_err(|e| anyhow!("start_stream on '{}': {}", device_name, e))?;
 
     tracing::info!(
-        "WASAPI loopback capture started: {} ({}ch, {}bit, {}Hz, {})",
+        "WASAPI loopback capture started on '{}': {}ch, {}bit, {}Hz, {}",
         device_name,
         dev_channels,
         mix_fmt.get_bitspersample(),
@@ -128,15 +156,21 @@ fn capture_loop(channels: u16, _rate: u32, duration_secs: u64, device_name_filte
 
     loop {
         if duration_secs > 0 && start.elapsed().as_secs() >= duration_secs {
+            tracing::info!("Capture duration limit reached ({}s)", duration_secs);
             break;
         }
 
-        match h_event.wait_for_event(200) {
-            Err(_) => {
+        match h_event.wait_for_event(EVENT_WAIT_TIMEOUT_MS) {
+            Err(_e) => {
                 // timeout — periodic stats log
-                if last_stats.elapsed().as_secs() >= 5 {
-                    tracing::info!("WASAPI loopback: alive (events={}, frames written={}, {}s elapsed)",
-                        events, frames_written, start.elapsed().as_secs());
+                if last_stats.elapsed().as_secs() >= STATS_LOG_INTERVAL_SECS {
+                    tracing::info!(
+                        device = device_name,
+                        events = events,
+                        frames_written = frames_written,
+                        elapsed_secs = start.elapsed().as_secs(),
+                        "WASAPI loopback: alive (still capturing)"
+                    );
                     last_stats = std::time::Instant::now();
                 }
                 continue;
@@ -151,7 +185,7 @@ fn capture_loop(channels: u16, _rate: u32, duration_secs: u64, device_name_filte
                 Ok(Some(n)) if n > 0 => n as usize,
                 Ok(_) => break,
                 Err(e) => {
-                    tracing::warn!("get_next_nbr_frames: {}", e);
+                    tracing::warn!(device = device_name, "get_next_nbr_frames: {}", e);
                     break;
                 }
             };
@@ -162,13 +196,13 @@ fn capture_loop(channels: u16, _rate: u32, duration_secs: u64, device_name_filte
             let (frames_read, flags) = match capture_client.read_from_device(&mut data) {
                 Ok(r) => r,
                 Err(e) => {
-                    tracing::warn!("read_from_device: {}", e);
+                    tracing::warn!(device = device_name, "read_from_device: {}", e);
                     break;
                 }
             };
 
             if flags.silent {
-                tracing::debug!("WASAPI loopback: silent buffer");
+                tracing::debug!(device = device_name, "WASAPI loopback: silent buffer");
             }
 
             if frames_read == 0 {
@@ -203,6 +237,13 @@ fn capture_loop(channels: u16, _rate: u32, duration_secs: u64, device_name_filte
                                 (i32::from_le_bytes(bytes4) >> shift) >> 16
                             }
                         } else {
+                            tracing::warn!(
+                                device = device_name,
+                                offset = offset,
+                                data_len = data.len(),
+                                bytes_per_sample = bytes_per_sample,
+                                "Buffer bounds check failed during sample conversion"
+                            );
                             0
                         }
                     } else {
@@ -214,16 +255,23 @@ fn capture_loop(channels: u16, _rate: u32, duration_secs: u64, device_name_filte
                 }
             }
 
-            out.write_all(&out_buffer)
-                .map_err(|e| anyhow!("Failed to write to stdout: {e}"))?;
+            if let Err(e) = out.write_all(&out_buffer) {
+                tracing::error!(device = device_name, error = %e, "Failed to write to stdout");
+                return Err(anyhow!("Failed to write to stdout: {}", e));
+            }
         }
     }
 
-    audio_client.stop_stream().ok(); // best-effort cleanup
+    // Best-effort cleanup: log any errors during stop
+    if let Err(e) = audio_client.stop_stream() {
+        tracing::warn!(device = device_name, error = %e, "Error stopping WASAPI stream (non-fatal)");
+    }
+    
     tracing::info!(
-        "WASAPI loopback stopped after {:.1}s ({} frames written)",
-        start.elapsed().as_secs_f64(),
-        frames_written
+        device = device_name,
+        elapsed_secs = start.elapsed().as_secs_f64(),
+        frames_written = frames_written,
+        "WASAPI loopback capture stopped"
     );
 
     Ok(())
@@ -240,9 +288,13 @@ fn main() -> Result<()> {
         )
         .init();
 
+    // Log resolved configuration at startup with structured fields
     tracing::info!(
-        "inferno2pipe starting: {}ch @ {}Hz, duration={}s",
-        args.channels, args.rate, args.duration
+        channels = args.channels,
+        rate_hz = args.rate,
+        duration_secs = args.duration,
+        device_filter = if args.device.is_empty() { "<default>" } else { &args.device },
+        "inferno2pipe starting"
     );
 
     let device_filter = if args.device.is_empty() {
